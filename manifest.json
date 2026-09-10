@@ -12,9 +12,9 @@
         "version": "1.0.0.0",
         "changelog": "Initial release.",
         "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/releases/suwayomi_metadata_1.0.0.0.zip",
-        "checksum": "4f3b58a6570b754baf8ebd98659b6964",
-        "timestamp": "2026-09-10T23:02:51Z"
+        "sourceUrl": "https://git.azuresucks.net/roberth/Jellyfin-Plugins/raw/branch/main/releases/suwayomi_metadata_1.0.0.0.zip",
+        "checksum": "5e01d62437cdbe36ed2b9f567dfa66bc",
+        "timestamp": "2026-09-10T23:03:50Z"
       }
     ]
   },
@@ -31,9 +31,9 @@
         "version": "1.0.0.0",
         "changelog": "Initial release.",
         "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/releases/mangabaka_1.0.0.0.zip",
-        "checksum": "91e35a9da00140c07e8956e3cf52897d",
-        "timestamp": "2026-09-10T23:02:52Z"
+        "sourceUrl": "https://git.azuresucks.net/roberth/Jellyfin-Plugins/raw/branch/main/releases/mangabaka_1.0.0.0.zip",
+        "checksum": "622db0cc9b07d452c2a864cc7d2e471b",
+        "timestamp": "2026-09-10T23:03:51Z"
       }
     ]
   }
