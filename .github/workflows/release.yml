@@ -86,6 +86,7 @@ jobs:
           generate_release_notes: true
           files: |
             releases/*.zip
+            assets/*.png
             manifest.json
 
       # The local checksum check above cannot catch a wrong sourceUrl, so
@@ -110,5 +111,20 @@ jobs:
                   bad += 1
               else:
                   print(f"ok {url} ({len(data)} bytes)")
+
+              # A broken imageUrl is silent in the catalogue -- the tile just
+              # renders empty -- so check it here rather than find out later.
+              img = p.get("imageUrl")
+              if not img:
+                  print(f"NO imageUrl for {p['name']}"); bad += 1; continue
+              try:
+                  with urllib.request.urlopen(img, timeout=60) as r:
+                      blob = r.read()
+                  if not blob.startswith(b"\x89PNG"):
+                      print(f"NOT A PNG {img}"); bad += 1
+                  else:
+                      print(f"ok {img} ({len(blob)} bytes)")
+              except Exception as e:
+                  print(f"FAILED {img}: {e}"); bad += 1
           sys.exit(1 if bad else 0)
           PY

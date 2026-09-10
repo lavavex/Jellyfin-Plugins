@@ -41,6 +41,15 @@ asm_name() {
 }
 slug() { echo "$1" | tr '[:upper:] ' '[:lower:]_'; }
 
+# Catalogue artwork, published alongside the zips so imageUrl resolves from the
+# same base. Jellyfin shows this in the plugin catalogue listing.
+logo() {
+  case "$1" in
+    "Suwayomi Metadata") echo "suwayomi.png" ;;
+    "MangaBaka")         echo "mangabaka.png" ;;
+  esac
+}
+
 DOTNET="${DOTNET:-dotnet}"
 command -v "$DOTNET" >/dev/null || DOTNET=/opt/homebrew/bin/dotnet
 
@@ -51,6 +60,11 @@ ENTRIES=""
 for spec in "${PLUGINS[@]}"; do
   IFS='|' read -r NAME GUID VER CAT DESC <<< "$spec"
   DIR=$(proj_dir "$NAME"); ASM=$(asm_name "$NAME"); SLUG=$(slug "$NAME")
+  LOGO=$(logo "$NAME")
+  if [ ! -f "assets/$LOGO" ]; then
+    echo "missing assets/$LOGO -- run assets/make_logos.py" >&2
+    exit 1
+  fi
 
   echo "building $NAME ..."
   "$DOTNET" build "$DIR" -c Release --nologo -v q >/dev/null
@@ -78,7 +92,7 @@ for spec in "${PLUGINS[@]}"; do
     \"overview\": \"$DESC\",
     \"owner\": \"roberth\",
     \"category\": \"$CAT\",
-    \"imageUrl\": \"\",
+    \"imageUrl\": \"$BASE/$LOGO\",
     \"versions\": [
       {
         \"version\": \"$VER\",

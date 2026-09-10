@@ -71,14 +71,13 @@ public sealed class MangaBakaClient
     /// <summary>
     /// Sent on every request. MangaBaka does filter some user-agents (Mozilla/3.0
     /// is refused, for instance), so we send a known-good one — and since this can
-    /// make a few hundred searches during a library refresh, it carries the plugin
-    /// name and repo so the operators can tell who is calling.
+    /// make a few hundred searches during a library refresh, it names the plugin so
+    /// the operators can tell who is calling.
     ///
     /// It is also, regrettably, Netscape Navigator 4.08.
     /// </summary>
     public const string UserAgent =
-        "Mozilla/4.08 [en] (Win95; I ;Nav) Jellyfin-Plugin-MangaBaka/1.0 "
-        + "(+https://git.azuresucks.net/roberth/Jellyfin-Plugins)";
+        "Mozilla/4.08 [en] (Win95; I ;Nav) Jellyfin-Plugin-MangaBaka/1.0";
 
     private readonly IHttpClientFactory _http;
     private readonly ILogger _log;

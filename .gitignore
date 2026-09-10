@@ -5,3 +5,6 @@ obj/
 # Build output — published as GitHub Release assets by CI, not committed.
 releases/
 manifest.json
+
+# macOS
+.DS_Store
