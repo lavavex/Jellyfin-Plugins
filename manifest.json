@@ -13,8 +13,8 @@
         "changelog": "Initial release.",
         "targetAbi": "12.0.0.0",
         "sourceUrl": "https://git.azuresucks.net/roberth/Jellyfin-Plugins/raw/branch/main/releases/suwayomi_metadata_1.0.0.0.zip",
-        "checksum": "5e01d62437cdbe36ed2b9f567dfa66bc",
-        "timestamp": "2026-09-10T23:03:50Z"
+        "checksum": "bded9d8b1476b369496a20e6154391ea",
+        "timestamp": "2026-09-10T23:05:08Z"
       }
     ]
   },
@@ -32,8 +32,8 @@
         "changelog": "Initial release.",
         "targetAbi": "12.0.0.0",
         "sourceUrl": "https://git.azuresucks.net/roberth/Jellyfin-Plugins/raw/branch/main/releases/mangabaka_1.0.0.0.zip",
-        "checksum": "622db0cc9b07d452c2a864cc7d2e471b",
-        "timestamp": "2026-09-10T23:03:51Z"
+        "checksum": "f3b73c7a4d050b94062f44c482ecf32a",
+        "timestamp": "2026-09-10T23:05:09Z"
       }
     ]
   }
