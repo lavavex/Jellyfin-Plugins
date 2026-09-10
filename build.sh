@@ -5,7 +5,10 @@
 #
 #   ./build.sh [base-url]
 #
-# base-url is where the releases/ directory will be reachable from. Jellyfin
+# base-url is the directory the zips are served from — it must already include
+# any path. GitHub release assets are flat, so for CI this is
+#   https://github.com/<o>/<r>/releases/download/<tag>
+# while a raw-git base would end in /releases. Jellyfin
 # downloads the zip from sourceUrl, so this must be an address the *server* can
 # reach — a LAN Gitea URL for private use, or the GitHub mirror for sharing.
 #
@@ -81,7 +84,7 @@ for spec in "${PLUGINS[@]}"; do
         \"version\": \"$VER\",
         \"changelog\": \"Initial release.\",
         \"targetAbi\": \"12.0.0.0\",
-        \"sourceUrl\": \"$BASE/$ZIP\",
+        \"sourceUrl\": \"$BASE/$(basename "$ZIP")\",
         \"checksum\": \"$SUM\",
         \"timestamp\": \"$STAMP\"
       }

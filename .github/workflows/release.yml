@@ -87,3 +87,28 @@ jobs:
           files: |
             releases/*.zip
             manifest.json
+
+      # The local checksum check above cannot catch a wrong sourceUrl, so
+      # re-verify against what is actually published and downloadable.
+      - name: Verify published assets resolve
+        run: |
+          sleep 10
+          python3 - <<'PY'
+          import hashlib, json, sys, urllib.request
+          bad = 0
+          for p in json.load(open("manifest.json")):
+              v = p["versions"][0]
+              url = v["sourceUrl"]
+              try:
+                  with urllib.request.urlopen(url, timeout=60) as r:
+                      data = r.read()
+              except Exception as e:
+                  print(f"FAILED {url}: {e}"); bad += 1; continue
+              got = hashlib.md5(data).hexdigest()
+              if got != v["checksum"]:
+                  print(f"MISMATCH {url}: manifest={v['checksum']} downloaded={got}")
+                  bad += 1
+              else:
+                  print(f"ok {url} ({len(data)} bytes)")
+          sys.exit(1 if bad else 0)
+          PY
