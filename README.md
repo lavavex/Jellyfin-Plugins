@@ -19,6 +19,12 @@ https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/manifest.json
 
 The plugins then appear under Catalog. Restart Jellyfin after installing.
 
+## Development
+
+Source of truth is a private Gitea instance, push-mirrored to GitHub. Release
+zips and `manifest.json` are served from the GitHub mirror so the repository
+is usable publicly.
+
 ## Why these exist
 
 Jellyfin models a book/manga **series folder** as a plain `Folder`, and no
