@@ -1,0 +1,89 @@
+name: Build and publish release
+
+# Gitea is the source of truth and push-mirrors into this repository, so the
+# workflow must never commit back — anything it wrote to a tracked branch would
+# be overwritten by the next mirror sync. Everything it produces is published as
+# GitHub Release assets instead, which the mirror does not touch.
+#
+# Jellyfin then reads a stable "latest release" manifest URL:
+#   https://github.com/<owner>/<repo>/releases/latest/download/manifest.json
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v1.0.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          [ -z "$TAG" ] && TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Publishing $TAG"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Must match the runtime Jellyfin 12 targets; the plugins are compiled
+          # against assemblies copied from the server itself.
+          dotnet-version: '10.0.x'
+
+      - name: Build and package
+        run: |
+          # Assets are attached to this tag's release, so that is the base URL
+          # the generated manifest must point at.
+          BASE="https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.tag }}"
+          chmod +x build.sh
+          ./build.sh "$BASE"
+
+      - name: Show what was built
+        run: |
+          echo "--- releases/"
+          ls -l releases/
+          echo "--- manifest.json"
+          cat manifest.json
+
+      - name: Verify manifest checksums match the built zips
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, sys, pathlib
+          bad = 0
+          for p in json.load(open("manifest.json")):
+              v = p["versions"][0]
+              name = v["sourceUrl"].rsplit("/", 1)[-1]
+              path = pathlib.Path("releases") / name
+              if not path.exists():
+                  print(f"MISSING {path}"); bad += 1; continue
+              got = hashlib.md5(path.read_bytes()).hexdigest()
+              if got != v["checksum"]:
+                  print(f"CHECKSUM MISMATCH {name}: manifest={v['checksum']} actual={got}")
+                  bad += 1
+              else:
+                  print(f"ok {name} {got}")
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            releases/*.zip
+            manifest.json

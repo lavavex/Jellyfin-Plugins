@@ -14,8 +14,11 @@ Both target **Jellyfin 12.0.0** (.NET 10).
 Dashboard → Plugins → Repositories → **+**, and add this manifest URL:
 
 ```
-https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/manifest.json
+https://github.com/lavavex/Jellyfin-Plugins/releases/latest/download/manifest.json
 ```
+
+That URL always resolves to the newest release, so Jellyfin picks up new
+versions without you changing anything.
 
 The plugins then appear under Catalog. Restart Jellyfin after installing.
 
@@ -46,15 +49,30 @@ Most series exist as *both* a novel and a manga adaptation, so leaving this on
 "Any" is the most common cause of wrong matches. `MinMatchScore` (default 80)
 controls how close a title must be before a result is accepted.
 
-## Building
+## Releasing
+
+Tag and push; GitHub Actions does the rest.
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The workflow builds both plugins, packages them, regenerates `manifest.json`
+with checksums, verifies each checksum against the built zip, and publishes
+everything as release assets.
+
+Build output is deliberately **not** committed. Gitea is the source of truth and
+push-mirrors into GitHub, so anything a workflow committed to a tracked branch
+would be overwritten by the next sync — release assets live outside that.
+
+To build locally without releasing:
 
 ```bash
 ./build.sh [base-url]
 ```
 
-Builds both plugins, packages them into `releases/`, and regenerates
-`manifest.json`. `base-url` is where `releases/` will be served from — Jellyfin
-downloads from `sourceUrl`, so it must be reachable *by the server*.
+`base-url` is where `releases/` will be served from; Jellyfin downloads from
+`sourceUrl`, so it must be reachable *by the server*.
 
 The build references Jellyfin 12.0.0 assemblies committed in `lib/` rather than
 NuGet packages, which pins it to that exact server version. After a Jellyfin
