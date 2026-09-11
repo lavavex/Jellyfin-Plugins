@@ -74,10 +74,12 @@ public sealed class MangaBakaClient
     /// make a few hundred searches during a library refresh, it names the plugin so
     /// the operators can tell who is calling.
     ///
-    /// It is also, regrettably, Netscape Navigator 4.08.
+    /// It is also, regrettably, Netscape Navigator 9 on Windows NT 3.5.
     /// </summary>
     public const string UserAgent =
-        "Mozilla/4.08 [en] (Win95; I ;Nav) Jellyfin-Plugin-MangaBaka/1.0";
+        "Mozilla/5.0 (Windows; U; Windows NT 3.5; en-US; rv:1.8.1.11pre) "
+        + "Gecko/20071206 Firefox/2.0.0.11 Navigator/9.0.0.5 "
+        + "Jellyfin-Plugin-MangaBaka/1.0";
 
     private readonly IHttpClientFactory _http;
     private readonly ILogger _log;

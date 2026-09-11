@@ -12,9 +12,10 @@ namespace Jellyfin.Plugin.Suwayomi;
 public class PluginConfiguration : BasePluginConfiguration
 {
     /// <summary>
-    /// Gets or sets the base URL of the Suwayomi server, e.g. http://10.10.0.123:4567.
+    /// Gets or sets the base URL of the Suwayomi server, scheme included.
+    /// Empty until configured, and while it is empty the providers stay idle.
     /// </summary>
-    public string ServerUrl { get; set; } = "http://10.10.0.123:4567";
+    public string ServerUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether the synopsis should have the
