@@ -6,8 +6,16 @@
     "overview": "Series metadata and cover art for manga libraries, read from a Suwayomi server.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/suwayomi.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/suwayomi.png",
     "versions": [
+      {
+        "version": "12.0.0.3",
+        "changelog": "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/suwayomi_metadata_12.0.0.3.zip",
+        "checksum": "3b5165ae8603e3b928c950f9a9f9a2ea",
+        "timestamp": "2026-09-11T03:17:23Z"
+      },
       {
         "version": "12.0.0.2",
         "changelog": "Image Fetchers (Books) now lists Suwayomi. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports().",
@@ -41,8 +49,16 @@
     "overview": "Series metadata and cover art for manga and light novel libraries, from MangaBaka.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/mangabaka.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/mangabaka.png",
     "versions": [
+      {
+        "version": "12.0.0.3",
+        "changelog": "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/mangabaka_12.0.0.3.zip",
+        "checksum": "759e5aacdfe996f5e5a5b1cab7a6ec3c",
+        "timestamp": "2026-09-11T03:17:23Z"
+      },
       {
         "version": "12.0.0.2",
         "changelog": "Image Fetchers (Books) now lists MangaBaka. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports().",
