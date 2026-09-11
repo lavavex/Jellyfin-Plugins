@@ -6,8 +6,16 @@
     "overview": "Series metadata and cover art for manga libraries, read from a Suwayomi server.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/suwayomi.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.4/suwayomi.png",
     "versions": [
+      {
+        "version": "12.0.0.4",
+        "changelog": "No code change; version kept in lockstep with MangaBaka.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.4/suwayomi_metadata_12.0.0.4.zip",
+        "checksum": "3e2867f3989035aa78d439449d4d114c",
+        "timestamp": "2026-09-11T16:48:17Z"
+      },
       {
         "version": "12.0.0.3",
         "changelog": "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder.",
@@ -49,8 +57,16 @@
     "overview": "Series metadata and cover art for manga and light novel libraries, from MangaBaka.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.3/mangabaka.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.4/mangabaka.png",
     "versions": [
+      {
+        "version": "12.0.0.4",
+        "changelog": "Stops writing year 100. Calibre/EPUB unset dates parse as 0100-12-31; the plugin now writes PremiereDate from MangaBaka's published year and ignores years outside 1800–2100.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0.4/mangabaka_12.0.0.4.zip",
+        "checksum": "206d5e128fc054cc4f6a0915e47c16fb",
+        "timestamp": "2026-09-11T16:48:17Z"
+      },
       {
         "version": "12.0.0.3",
         "changelog": "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder.",
