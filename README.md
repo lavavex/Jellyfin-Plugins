@@ -30,8 +30,8 @@ installed from the plugin's page.
 The plugins then appear under Catalog → Books. Restart Jellyfin after installing.
 
 Enable them per library: **Dashboard → Libraries → (book library) → Metadata
-downloaders**. They show as **Suwayomi** and **MangaBaka** next to Google Books
-and Comic Vine.
+downloaders** and **Image Fetchers (Books)**. They show as **Suwayomi** and
+**MangaBaka** next to Google Books and Comic Vine.
 
 ## Why these exist
 

@@ -26,8 +26,8 @@ mkdir -p "$OUT"
 # name|guid|version|category|description
 # Version tracks Jellyfin's major: 12.0.0.0 was the first release for Jellyfin 12.
 PLUGINS=(
-"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.1|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
-"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.1|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
+"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.2|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
+"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.2|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
 )
 
 # Notes for the version being built. Earlier versions keep the notes recorded in
@@ -35,10 +35,10 @@ PLUGINS=(
 changelog_for() {
   case "$1" in
     "Suwayomi Metadata")
-      echo "The three providers now share one client, so a library refresh makes a single GraphQL query to Suwayomi instead of three. New setting limits the plugin to libraries whose content type is Books, so it no longer claims plain folders in photo or mixed libraries."
+      echo "Image Fetchers (Books) now lists Suwayomi. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
       ;;
     "MangaBaka")
-      echo "Adds a local copy of MangaBaka's nightly database: download it from Dashboard > Scheduled Tasks and a whole-library refresh then matches offline, with no API requests at all. A second task refreshes every book library in one go. Fixes series being titled in Chinese or Japanese rather than English, the plugin searching MangaBaka for plain folders in every library on the server, and roughly 180 tags being written per series (now capped, 8 by default, spoilers dropped). Adds a title-language setting, matching for non-Latin titles, request throttling, and a link back to the MangaBaka page."
+      echo "Image Fetchers (Books) now lists MangaBaka. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
       ;;
   esac
 }

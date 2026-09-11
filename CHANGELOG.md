@@ -6,6 +6,16 @@ component tracks the Jellyfin major they target.
 The same notes are published in `manifest.json`, which carries every release —
 Jellyfin's plugin page lets you install an older version from it.
 
+## 12.0.0.2 — unreleased
+
+### MangaBaka and Suwayomi Metadata
+
+**Fixed: neither plugin appeared under Image Fetchers (Books).** Jellyfin
+probes image providers with a dummy `Book` that has no parent library.
+`Supports()` was requiring a Books library, so both providers declined the
+dummy and never showed up. The library-type check now happens when fetching
+images, not when listing fetchers.
+
 ## 12.0.0.1 — 2026-09-11
 
 ### MangaBaka

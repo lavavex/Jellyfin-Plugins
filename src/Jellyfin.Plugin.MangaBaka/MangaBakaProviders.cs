@@ -313,8 +313,14 @@ public sealed class MangaBakaImageProvider : IRemoteImageProvider
     public string Name => "MangaBaka";
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Library options probe this with a dummy Book that has no parent library, so
+    /// the Books-library check has to live in <see cref="GetImages"/> — otherwise
+    /// the provider never appears under Image Fetchers (Books).
+    /// </remarks>
     public bool Supports(BaseItem item) =>
-        MangaBakaPlugin.Instance?.Configuration.ProvideImages != false && _resolver.AppliesTo(item);
+        MangaBakaPlugin.Instance?.Configuration.ProvideImages != false
+        && (item is Book || item.GetType() == typeof(Folder));
 
     /// <inheritdoc />
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => new[] { ImageType.Primary };
@@ -322,6 +328,11 @@ public sealed class MangaBakaImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
+        if (!_resolver.AppliesTo(item))
+        {
+            return Array.Empty<RemoteImageInfo>();
+        }
+
         var title = item is Book book && !string.IsNullOrWhiteSpace(book.SeriesName) ? book.SeriesName : item.Name;
         var series = await _resolver
             .ResolveAsync(item.GetProviderId(MangaBakaClient.ProviderId), title, cancellationToken)

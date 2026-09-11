@@ -643,9 +643,14 @@ public sealed class SuwayomiImageProvider : IRemoteImageProvider
     public string Name => "Suwayomi";
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Library options probe this with a dummy Book that has no parent library, so
+    /// the Books-library check has to live in <see cref="GetImages"/> — otherwise
+    /// the provider never appears under Image Fetchers (Books).
+    /// </remarks>
     public bool Supports(BaseItem item) =>
         SuwayomiPlugin.Instance?.Configuration.ProvideImages != false
-        && SuwayomiClient.AppliesTo(item, _library);
+        && (item is Book || item.GetType() == typeof(Folder));
 
     /// <inheritdoc />
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => new[] { ImageType.Primary };
@@ -653,6 +658,11 @@ public sealed class SuwayomiImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
+        if (!SuwayomiClient.AppliesTo(item, _library))
+        {
+            return Array.Empty<RemoteImageInfo>();
+        }
+
         SuwayomiManga? manga = null;
         if (int.TryParse(item.GetProviderId(SuwayomiClient.ProviderId), out var id) && id > 0)
         {
