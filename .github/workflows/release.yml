@@ -1,10 +1,10 @@
 name: Build and publish release
 
 # Tags and main are pushed to Gitea and GitHub from the workstation — there is
-# no Gitea→GitHub mirror. This workflow only runs on GitHub. Do not commit
-# back to a branch from here; publish zips as release assets, then copy the
-# printed versions.json entries and the published manifest.json in a follow-up
-# commit that is pushed to both remotes.
+# no Gitea→GitHub mirror. This workflow only runs on GitHub. After the zips are
+# published it commits manifest.json (and the new versions.json entries) to
+# GitHub main so Jellyfin's catalogue URL picks them up. Pull that commit onto
+# Gitea afterwards so the two remotes stay in sync.
 #
 # Jellyfin reads the committed manifest from raw.githubusercontent.com:
 #   https://raw.githubusercontent.com/<owner>/<repo>/main/manifest.json
@@ -157,22 +157,55 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
-      # versions.json is maintained by hand. Print the entries to paste in so
-      # the next release keeps this one installable.
-      - name: Entries to add to versions.json
+      # Jellyfin reads manifest.json from GitHub main, not from the release
+      # asset. Checksums only exist after the zips are built, so this has to
+      # land in a follow-up commit rather than on the tag that triggered us.
+      - name: Commit catalogue to main
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}" python3 - <<'PY'
+          set -euo pipefail
+          cp manifest.json /tmp/catalog-manifest.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B catalog-update origin/main
+          cp /tmp/catalog-manifest.json manifest.json
+
+          TAG="$TAG" python3 - <<'PY'
           import json, os
           tag = os.environ["TAG"]
-          for p in json.load(open("manifest.json")):
+          manifest = json.load(open("manifest.json"))
+          history = json.load(open("versions.json"))
+          changed = False
+          for p in manifest:
               v = p["versions"][0]
-              print(f'\n{p["name"]}  ->  versions.json["{p["guid"]}"]')
-              print(json.dumps({
+              entry = {
                   "version": v["version"],
                   "tag": tag,
                   "asset": v["sourceUrl"].rsplit("/", 1)[-1],
                   "checksum": v["checksum"],
                   "timestamp": v["timestamp"],
                   "changelog": v["changelog"],
-              }, indent=2, ensure_ascii=False))
+              }
+              lst = history.setdefault(p["guid"], [])
+              if any(e.get("version") == entry["version"] for e in lst):
+                  print(f"versions.json already has {p['name']} {entry['version']}")
+                  continue
+              lst.append(entry)
+              changed = True
+              print(f"appended {p['name']} {entry['version']}")
+          if changed:
+              with open("versions.json", "w", encoding="utf-8") as f:
+                  json.dump(history, f, indent=2, ensure_ascii=False)
+                  f.write("\n")
           PY
+
+          git add manifest.json versions.json
+          if git diff --cached --quiet; then
+            echo "catalogue on main already matches this release"
+            exit 0
+          fi
+          git commit -m "Update catalogue to ${TAG}"
+          git push origin HEAD:main

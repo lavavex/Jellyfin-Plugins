@@ -6,8 +6,8 @@
     "",
     "Entries here are already published: their zips live on their own tag's",
     "release and cannot be rebuilt byte-for-byte, so the checksums are recorded",
-    "rather than recomputed. Add the version being released to this file as part",
-    "of the release commit, then tag."
+    "rather than recomputed. The release workflow appends the version it just",
+    "published after the zips are up."
   ],
   "6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90": [
     {

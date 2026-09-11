@@ -138,12 +138,14 @@ which is fine for checking the zip layout, not for the committed catalogue.
 
 3. GitHub Actions builds both plugins, packages them, regenerates
    `manifest.json`, verifies every checksum in it against what is actually
-   downloadable, and publishes the zips (and a copy of the manifest) as
-   release assets.
-4. The final workflow step prints a JSON entry per plugin. Paste each into
-   `versions.json`, copy the published `manifest.json` into the repo, commit,
-   and `git push origin`. That is what the catalogue URL reads, and what keeps
-   this version offered by the *next* release.
+   downloadable, publishes the zips as release assets, and commits the
+   catalogue (`manifest.json` and the new `versions.json` entries) to GitHub
+   `main`. That is what Jellyfin reads. Pull that commit onto Gitea so the
+   remotes stay in sync:
+
+   ```bash
+   git pull github main && git push origin main
+   ```
 
 Zips are deliberately **not** committed. They live as GitHub Release assets.
 
