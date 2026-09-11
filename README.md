@@ -19,8 +19,8 @@ Dashboard → Plugins → Repositories → **+**, and add this manifest URL:
 https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/manifest.json
 ```
 
-That is a file on `main`, so a new release is visible as soon as the mirror
-picks up the commit (GitHub's CDN caches it for about five minutes). Do not
+That is a file on `main`, so a new release is visible as soon as GitHub has
+the commit (the raw CDN caches it for about five minutes). Do not
 use the GitHub `/releases/latest/download/` URL: those assets are served as
 `application/octet-stream` after a redirect, and Jellyfin's catalogue will
 not parse them — you will only ever see the version already installed. The
@@ -103,9 +103,10 @@ series, season or collection, which are also `Folder`s underneath.
 
 ## Development
 
-Source of truth is a private Gitea instance, push-mirrored to GitHub. Release
-zips are GitHub Release assets; `manifest.json` is committed on `main` so
-Jellyfin can fetch it from `raw.githubusercontent.com`.
+Work is pushed to Gitea (`origin`) and GitHub (`github`) from this machine —
+there is no Gitea→GitHub mirror. `git push origin` sends to both. Release zips
+are GitHub Release assets; `manifest.json` is committed on `main` so Jellyfin
+can fetch it from `raw.githubusercontent.com`.
 
 The build references Jellyfin 12.0.0 assemblies committed in `lib/` rather than
 NuGet packages, which pins it to that exact server version. After a Jellyfin
@@ -129,10 +130,10 @@ which is fine for checking the zip layout, not for the committed catalogue.
 1. Bump `AssemblyVersion`/`FileVersion` in both `.csproj` files and the version
    in `build.sh`, and add the release notes to `CHANGELOG.md` and to
    `changelog_for()` in `build.sh`.
-2. Tag and push:
+2. Tag and push to both remotes (`origin` is configured to do that):
 
    ```bash
-   git tag v12.0.0.1 && git push origin v12.0.0.1
+   git tag v12.0.0.2 && git push origin v12.0.0.2
    ```
 
 3. GitHub Actions builds both plugins, packages them, regenerates
@@ -140,14 +141,11 @@ which is fine for checking the zip layout, not for the committed catalogue.
    downloadable, and publishes the zips (and a copy of the manifest) as
    release assets.
 4. The final workflow step prints a JSON entry per plugin. Paste each into
-   `versions.json`, copy the published `manifest.json` into the repo, and
-   commit both on Gitea. That is what the catalogue URL reads, and what keeps
-   this version offered by the *next* release — the workflow cannot commit it
-   itself, because the Gitea mirror would overwrite anything it pushed.
+   `versions.json`, copy the published `manifest.json` into the repo, commit,
+   and `git push origin`. That is what the catalogue URL reads, and what keeps
+   this version offered by the *next* release.
 
-Zips are deliberately **not** committed. Gitea is the source of truth and
-push-mirrors into GitHub, so anything a workflow committed to a tracked branch
-would be overwritten by the next sync — release assets live outside that.
+Zips are deliberately **not** committed. They live as GitHub Release assets.
 
 ## Attribution
 

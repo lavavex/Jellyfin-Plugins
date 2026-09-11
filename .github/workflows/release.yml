@@ -1,16 +1,15 @@
 name: Build and publish release
 
-# Gitea is the source of truth and push-mirrors into this repository, so the
-# workflow must never commit back — anything it wrote to a tracked branch would
-# be overwritten by the next mirror sync. Everything it produces is published as
-# GitHub Release assets instead, which the mirror does not touch.
+# Tags and main are pushed to Gitea and GitHub from the workstation — there is
+# no Gitea→GitHub mirror. This workflow only runs on GitHub. Do not commit
+# back to a branch from here; publish zips as release assets, then copy the
+# printed versions.json entries and the published manifest.json in a follow-up
+# commit that is pushed to both remotes.
 #
 # Jellyfin reads the committed manifest from raw.githubusercontent.com:
 #   https://raw.githubusercontent.com/<owner>/<repo>/main/manifest.json
 # GitHub Release asset URLs are application/octet-stream after a redirect,
-# which the catalogue will not parse. After this job finishes, copy the
-# published manifest.json into the Gitea repo alongside the versions.json
-# entries printed at the end.
+# which the catalogue will not parse.
 
 on:
   push:
@@ -158,9 +157,8 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
-      # versions.json is maintained by hand — CI must not commit to a tracked
-      # branch, since the Gitea mirror would overwrite it. Print the entries to
-      # paste in so the next release keeps this one installable.
+      # versions.json is maintained by hand. Print the entries to paste in so
+      # the next release keeps this one installable.
       - name: Entries to add to versions.json
         run: |
           TAG="${{ steps.tag.outputs.tag }}" python3 - <<'PY'
