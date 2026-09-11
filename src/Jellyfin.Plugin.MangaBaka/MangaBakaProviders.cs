@@ -234,9 +234,10 @@ public sealed class MangaBakaMetadataProvider : IRemoteMetadataProvider<Book, Bo
 }
 
 /// <summary>
-/// Fills series-folder metadata from MangaBaka. Book libraries still model a
-/// series directory as a plain Folder, which never appears in the metadata
-/// downloader list — this runs during refresh so the folder is not left blank.
+/// Fills series-folder metadata from MangaBaka. Book libraries model a series
+/// directory as a plain Folder, which has no row in the metadata-downloader
+/// list, so this runs during refresh — but only when MangaBaka is ticked for
+/// Books in that library.
 /// </summary>
 public sealed class MangaBakaFolderMetadataProvider : ICustomMetadataProvider<Folder>, IHasItemChangeMonitor
 {
@@ -264,7 +265,7 @@ public sealed class MangaBakaFolderMetadataProvider : ICustomMetadataProvider<Fo
         MetadataRefreshOptions options,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(item.Name) || !_resolver.AppliesTo(item))
+        if (string.IsNullOrEmpty(item.Name) || !_resolver.AppliesTo(item) || !_resolver.IsSelected(item, images: false))
         {
             return ItemUpdateType.None;
         }
@@ -328,7 +329,7 @@ public sealed class MangaBakaImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        if (!_resolver.AppliesTo(item))
+        if (!_resolver.AppliesTo(item) || !_resolver.IsSelected(item, images: true))
         {
             return Array.Empty<RemoteImageInfo>();
         }

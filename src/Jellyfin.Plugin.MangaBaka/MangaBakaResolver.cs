@@ -3,6 +3,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MangaBaka;
@@ -112,6 +113,28 @@ public sealed class MangaBakaResolver
             _log.LogDebug(ex, "MangaBaka: could not read the library type for {Path}", item.Path);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Whether this plugin is ticked in the library's Book metadata or image
+    /// fetchers. Series folders are plain <see cref="Folder"/>s, which have no row
+    /// in that UI, so Jellyfin never applies the checkbox to the folder provider
+    /// itself — we have to.
+    /// </summary>
+    /// <param name="item">Item being refreshed.</param>
+    /// <param name="images">True to read Image Fetchers, false for Metadata downloaders.</param>
+    /// <returns>True when MangaBaka is selected for this library.</returns>
+    public bool IsSelected(BaseItem item, bool images)
+    {
+        var options = _library.GetLibraryOptions(item);
+        var type = options.GetTypeOptions("Book") ?? options.GetTypeOptions(item.GetType().Name);
+        if (type is null)
+        {
+            return false;
+        }
+
+        var selected = images ? type.ImageFetchers : type.MetadataFetchers;
+        return selected.Any(name => string.Equals(name, "MangaBaka", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Resolves the series for a stored provider id, falling back to a title.</summary>

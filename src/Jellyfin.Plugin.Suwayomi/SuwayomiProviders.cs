@@ -9,6 +9,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
@@ -113,6 +114,28 @@ public sealed class SuwayomiClient
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Whether Suwayomi is ticked in the library's Book metadata or image fetchers.
+    /// Series folders are plain Folders, which have no row in that UI, so Jellyfin
+    /// never applies the checkbox to the folder provider itself — we have to.
+    /// </summary>
+    /// <param name="item">Item being refreshed.</param>
+    /// <param name="library">Library manager.</param>
+    /// <param name="images">True to read Image Fetchers, false for Metadata downloaders.</param>
+    /// <returns>True when Suwayomi is selected for this library.</returns>
+    public static bool IsSelected(BaseItem item, ILibraryManager library, bool images)
+    {
+        var options = library.GetLibraryOptions(item);
+        var type = options.GetTypeOptions("Book") ?? options.GetTypeOptions(item.GetType().Name);
+        if (type is null)
+        {
+            return false;
+        }
+
+        var selected = images ? type.ImageFetchers : type.MetadataFetchers;
+        return selected.Any(name => string.Equals(name, "Suwayomi", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -530,7 +553,7 @@ public sealed class SuwayomiFolderMetadataProvider : ICustomMetadataProvider<Fol
         MetadataRefreshOptions options,
         CancellationToken cancellationToken)
     {
-        if (!SuwayomiClient.AppliesTo(item, _library))
+        if (!SuwayomiClient.AppliesTo(item, _library) || !SuwayomiClient.IsSelected(item, _library, images: false))
         {
             return ItemUpdateType.None;
         }
@@ -658,7 +681,7 @@ public sealed class SuwayomiImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        if (!SuwayomiClient.AppliesTo(item, _library))
+        if (!SuwayomiClient.AppliesTo(item, _library) || !SuwayomiClient.IsSelected(item, _library, images: true))
         {
             return Array.Empty<RemoteImageInfo>();
         }

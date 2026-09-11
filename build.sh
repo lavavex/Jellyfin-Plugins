@@ -26,8 +26,8 @@ mkdir -p "$OUT"
 # name|guid|version|category|description
 # Version tracks Jellyfin's major: 12.0.0.0 was the first release for Jellyfin 12.
 PLUGINS=(
-"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.2|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
-"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.2|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
+"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.3|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
+"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.3|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
 )
 
 # Notes for the version being built. Earlier versions keep the notes recorded in
@@ -35,10 +35,10 @@ PLUGINS=(
 changelog_for() {
   case "$1" in
     "Suwayomi Metadata")
-      echo "Image Fetchers (Books) now lists Suwayomi. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
+      echo "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder."
       ;;
     "MangaBaka")
-      echo "Image Fetchers (Books) now lists MangaBaka. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
+      echo "Series-folder metadata and covers now honour the Books metadata/image fetcher checkboxes. Jellyfin does not apply those lists to ICustomMetadataProvider, so MangaBaka was still searching every manga folder."
       ;;
   esac
 }

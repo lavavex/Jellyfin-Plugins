@@ -32,7 +32,9 @@ The plugins then appear under Catalog → Books. Restart Jellyfin after installi
 
 Enable them per library: **Dashboard → Libraries → (book library) → Metadata
 downloaders** and **Image Fetchers (Books)**. They show as **Suwayomi** and
-**MangaBaka** next to Google Books and Comic Vine.
+**MangaBaka** next to Google Books and Comic Vine. Series folders are plain
+Folders and do not have their own row in that UI; the plugins still honour
+the Books checkboxes and will not touch a library you did not select them on.
 
 ## Why these exist
 

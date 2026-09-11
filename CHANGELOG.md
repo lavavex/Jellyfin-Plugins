@@ -6,6 +6,17 @@ component tracks the Jellyfin major they target.
 The same notes are published in `manifest.json`, which carries every release —
 Jellyfin's plugin page lets you install an older version from it.
 
+## 12.0.0.3 — unreleased
+
+### MangaBaka and Suwayomi Metadata
+
+**Fixed: folder providers ignored the library's metadata/image fetcher
+checkboxes.** Series directories are plain Folders, which have no row in
+that UI, and Jellyfin does not consult the Books lists for
+`ICustomMetadataProvider`. MangaBaka was still hitting every manga folder
+(and getting 429s) even when only Suwayomi was selected. Both plugins now
+read the Books checkboxes for that library before touching a folder.
+
 ## 12.0.0.2 — 2026-09-11
 
 ### MangaBaka and Suwayomi Metadata
