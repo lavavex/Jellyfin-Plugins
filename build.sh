@@ -5,35 +5,40 @@
 #
 #   ./build.sh [base-url]
 #
-# base-url is the directory the zips are served from — it must already include
-# any path. GitHub release assets are flat, so for CI this is
+# base-url is the directory this release's zips are served from — it must already
+# include any path. GitHub release assets are flat, so for CI this is
 #   https://github.com/<o>/<r>/releases/download/<tag>
-# while a raw-git base would end in /releases. Jellyfin
-# downloads the zip from sourceUrl, so this must be an address the *server* can
-# reach — a LAN Gitea URL for private use, or the GitHub mirror for sharing.
+# and it defaults to the "latest release" alias, which resolves to the same files
+# once the tag is published. Jellyfin downloads the zip from sourceUrl, so this
+# must be an address the *server* can reach.
 #
-# Defaults to the GitHub mirror.
+# Every previously published version is carried into the manifest from
+# versions.json, so upgrading never hides the older releases.
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
-BASE="${1:-https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main}"
+REPO="${REPO:-lavavex/Jellyfin-Plugins}"
+BASE="${1:-https://github.com/$REPO/releases/latest/download}"
 OUT="releases"
 mkdir -p "$OUT"
 
 # name|guid|version|category|description
-# Version tracks Jellyfin's major: 12.0.0.0 is the first release for Jellyfin 12.
+# Version tracks Jellyfin's major: 12.0.0.0 was the first release for Jellyfin 12.
 PLUGINS=(
-"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.0|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
-"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.0|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
+"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.1|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
+"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.1|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
 )
+
+# Notes for the version being built. Earlier versions keep the notes recorded in
+# versions.json — this only describes what is new in the build happening now.
 changelog_for() {
   case "$1" in
     "Suwayomi Metadata")
-      echo "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Server URL starts blank."
+      echo "The three providers now share one client, so a library refresh makes a single GraphQL query to Suwayomi instead of three. New setting limits the plugin to libraries whose content type is Books, so it no longer claims plain folders in photo or mixed libraries."
       ;;
     "MangaBaka")
-      echo "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Reads titles, publication dates, and tags per the MangaBaka spec. Optional beta (v2) API."
+      echo "Adds a local copy of MangaBaka's nightly database: download it from Dashboard > Scheduled Tasks and a whole-library refresh then matches offline, with no API requests at all. A second task refreshes every book library in one go. Fixes series being titled in Chinese or Japanese rather than English, the plugin searching MangaBaka for plain folders in every library on the server, and roughly 180 tags being written per series (now capped, 8 by default, spoilers dropped). Adds a title-language setting, matching for non-Latin titles, request throttling, and a link back to the MangaBaka page."
       ;;
   esac
 }
@@ -64,10 +69,13 @@ logo() {
 DOTNET="${DOTNET:-dotnet}"
 command -v "$DOTNET" >/dev/null || DOTNET=/opt/homebrew/bin/dotnet
 
+echo "repo:     $REPO"
 echo "base url: $BASE"
 echo
 
-ENTRIES=""
+CURRENT="$OUT/.current.json"
+: > "$CURRENT"
+
 for spec in "${PLUGINS[@]}"; do
   IFS='|' read -r NAME GUID VER CAT DESC <<< "$spec"
   DIR=$(proj_dir "$NAME"); ASM=$(asm_name "$NAME"); SLUG=$(slug "$NAME")
@@ -107,35 +115,69 @@ META
   # Jellyfin verifies the download against this MD5.
   if command -v md5sum >/dev/null; then SUM=$(md5sum "$ZIP" | cut -d' ' -f1)
   else SUM=$(md5 -q "$ZIP"); fi
-  STAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   echo "  -> $ZIP  ($(wc -c < "$ZIP" | tr -d ' ') bytes, md5 $SUM)"
 
-  [ -n "$ENTRIES" ] && ENTRIES="$ENTRIES,"
-  ENTRIES="$ENTRIES
-  {
-    \"guid\": \"$GUID\",
-    \"name\": \"$NAME\",
-    \"description\": \"$DESC\",
-    \"overview\": \"$DESC\",
-    \"owner\": \"roberth\",
-    \"category\": \"$CAT\",
-    \"imageUrl\": \"$BASE/$LOGO\",
-    \"versions\": [
-      {
-        \"version\": \"$VER\",
-        \"changelog\": \"$CHANGELOG\",
-        \"targetAbi\": \"12.0.0.0\",
-        \"sourceUrl\": \"$BASE/$(basename "$ZIP")\",
-        \"checksum\": \"$SUM\",
-        \"timestamp\": \"$STAMP\"
-      }
-    ]
-  }"
+  # One record per line; the manifest itself is assembled in python below, where
+  # quoting a changelog into JSON is somebody else's problem.
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$GUID" "$NAME" "$DESC" "$CAT" "$VER" "$(basename "$ZIP")" "$SUM" "$LOGO" "$CHANGELOG" >> "$CURRENT"
 done
 
-printf '[%s\n]\n' "$ENTRIES" > manifest.json
 echo
-echo "wrote manifest.json"
-python3 -c "import json;d=json.load(open('manifest.json'));print(f'  valid JSON, {len(d)} plugins')" 2>/dev/null \
-  || echo "  (install python3 to validate)"
+BASE="$BASE" REPO="$REPO" CURRENT="$CURRENT" python3 - <<'PY'
+import json, os, datetime
+
+base = os.environ["BASE"].rstrip("/")
+repo = os.environ["REPO"]
+stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+history = json.load(open("versions.json"))
+
+manifest = []
+for line in open(os.environ["CURRENT"], encoding="utf-8"):
+    guid, name, desc, cat, ver, asset, checksum, logo, changelog = line.rstrip("\n").split("\t")
+
+    versions = [{
+        "version": ver,
+        "changelog": changelog,
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": f"{base}/{asset}",
+        "checksum": checksum,
+        "timestamp": stamp,
+    }]
+
+    # Older releases keep their own tag's asset URL and their recorded checksum;
+    # they cannot be rebuilt byte-for-byte, and their zips are on that release.
+    for old in reversed(history.get(guid, [])):
+        if old["version"] == ver:
+            continue
+        versions.append({
+            "version": old["version"],
+            "changelog": old["changelog"],
+            "targetAbi": old.get("targetAbi", "12.0.0.0"),
+            "sourceUrl": f"https://github.com/{repo}/releases/download/{old['tag']}/{old['asset']}",
+            "checksum": old["checksum"],
+            "timestamp": old["timestamp"],
+        })
+
+    manifest.append({
+        "guid": guid,
+        "name": name,
+        "description": desc,
+        "overview": desc,
+        "owner": "roberth",
+        "category": cat,
+        "imageUrl": f"{base}/{logo}",
+        "versions": versions,
+    })
+
+with open("manifest.json", "w", encoding="utf-8") as f:
+    json.dump(manifest, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+
+print("wrote manifest.json")
+for p in manifest:
+    print(f"  {p['name']}: " + ", ".join(v["version"] for v in p["versions"]))
+PY
+
+rm -f "$CURRENT"

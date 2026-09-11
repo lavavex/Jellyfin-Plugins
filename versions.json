@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Published release history, newest last. build.sh appends the version it is",
+    "building to this and writes the whole list into manifest.json, so Jellyfin",
+    "offers every release and not only the newest one.",
+    "",
+    "Entries here are already published: their zips live on their own tag's",
+    "release and cannot be rebuilt byte-for-byte, so the checksums are recorded",
+    "rather than recomputed. Add the version being released to this file as part",
+    "of the release commit, then tag."
+  ],
+  "6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90": [
+    {
+      "version": "12.0.0.0",
+      "tag": "v12.0.0",
+      "asset": "suwayomi_metadata_12.0.0.0.zip",
+      "checksum": "983b5dc4efa46517f434007392e742d1",
+      "timestamp": "2026-09-11T00:48:56Z",
+      "changelog": "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Server URL starts blank."
+    }
+  ],
+  "8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83": [
+    {
+      "version": "12.0.0.0",
+      "tag": "v12.0.0",
+      "asset": "mangabaka_12.0.0.0.zip",
+      "checksum": "bd416225317fc253bd5f601635fa790c",
+      "timestamp": "2026-09-11T00:48:58Z",
+      "changelog": "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Reads titles, publication dates, and tags per the MangaBaka spec. Optional beta (v2) API."
+    }
+  ]
+}

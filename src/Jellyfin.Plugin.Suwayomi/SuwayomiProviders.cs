@@ -59,7 +59,7 @@ public sealed class SuwayomiClient
     private static readonly char[] Illegal = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
 
     private readonly IHttpClientFactory _http;
-    private readonly ILogger _log;
+    private readonly ILogger<SuwayomiClient> _log;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     private Dictionary<string, SuwayomiManga>? _byKey;
@@ -68,7 +68,7 @@ public sealed class SuwayomiClient
     /// <summary>Initializes a new instance of the <see cref="SuwayomiClient"/> class.</summary>
     /// <param name="http">HTTP client factory.</param>
     /// <param name="log">Logger.</param>
-    public SuwayomiClient(IHttpClientFactory http, ILogger log)
+    public SuwayomiClient(IHttpClientFactory http, ILogger<SuwayomiClient> log)
     {
         _http = http;
         _log = log;
@@ -83,6 +83,37 @@ public sealed class SuwayomiClient
 
     /// <summary>Stored on items so a later refresh can skip search.</summary>
     public const string ProviderId = "Suwayomi";
+
+    /// <summary>
+    /// Whether an item is one this plugin should fill: a book, or a series folder in
+    /// a book library. Series, Season, BoxSet and CollectionFolder all derive from
+    /// Folder, and every folder in a photo library is a plain Folder too, so the
+    /// concrete type and the library's content type both have to be checked.
+    /// </summary>
+    /// <param name="item">The item being refreshed.</param>
+    /// <param name="library">Library manager.</param>
+    /// <returns>True when the plugin should act on this item.</returns>
+    public static bool AppliesTo(BaseItem? item, ILibraryManager library)
+    {
+        if (item is null || (item is not Book && item.GetType() != typeof(Folder)))
+        {
+            return false;
+        }
+
+        if (SuwayomiPlugin.Instance?.Configuration.RestrictToBookLibraries == false)
+        {
+            return true;
+        }
+
+        try
+        {
+            return library.GetInheritedContentType(item) == CollectionType.books;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     /// <summary>
     /// Reproduces Suwayomi's own folder naming so a path can be mapped back to a title.
@@ -322,16 +353,14 @@ public sealed class SuwayomiMetadataProvider : IRemoteMetadataProvider<Book, Boo
 {
     private readonly IHttpClientFactory _http;
     private readonly SuwayomiClient _client;
-    private readonly ILogger<SuwayomiMetadataProvider> _log;
 
     /// <summary>Initializes a new instance of the <see cref="SuwayomiMetadataProvider"/> class.</summary>
+    /// <param name="client">Shared Suwayomi client.</param>
     /// <param name="http">HTTP client factory.</param>
-    /// <param name="log">Logger.</param>
-    public SuwayomiMetadataProvider(IHttpClientFactory http, ILogger<SuwayomiMetadataProvider> log)
+    public SuwayomiMetadataProvider(SuwayomiClient client, IHttpClientFactory http)
     {
+        _client = client;
         _http = http;
-        _log = log;
-        _client = new SuwayomiClient(http, log);
     }
 
     /// <inheritdoc />
@@ -475,15 +504,18 @@ public sealed class SuwayomiMetadataProvider : IRemoteMetadataProvider<Book, Boo
 public sealed class SuwayomiFolderMetadataProvider : ICustomMetadataProvider<Folder>, IHasItemChangeMonitor
 {
     private readonly SuwayomiClient _client;
+    private readonly ILibraryManager _library;
     private readonly ILogger<SuwayomiFolderMetadataProvider> _log;
 
     /// <summary>Initializes a new instance of the <see cref="SuwayomiFolderMetadataProvider"/> class.</summary>
-    /// <param name="http">HTTP client factory.</param>
+    /// <param name="client">Shared Suwayomi client.</param>
+    /// <param name="library">Library manager.</param>
     /// <param name="log">Logger.</param>
-    public SuwayomiFolderMetadataProvider(IHttpClientFactory http, ILogger<SuwayomiFolderMetadataProvider> log)
+    public SuwayomiFolderMetadataProvider(SuwayomiClient client, ILibraryManager library, ILogger<SuwayomiFolderMetadataProvider> log)
     {
+        _client = client;
+        _library = library;
         _log = log;
-        _client = new SuwayomiClient(http, log);
     }
 
     /// <inheritdoc />
@@ -498,9 +530,9 @@ public sealed class SuwayomiFolderMetadataProvider : ICustomMetadataProvider<Fol
         MetadataRefreshOptions options,
         CancellationToken cancellationToken)
     {
-        if (item.GetType() != typeof(Folder))
+        if (!SuwayomiClient.AppliesTo(item, _library))
         {
-            return ItemUpdateType.None;   // Series/Season/BoxSet also bind to Folder
+            return ItemUpdateType.None;
         }
 
         var manga = await _client.MatchFolderAsync(item.Path, cancellationToken).ConfigureAwait(false);
@@ -594,32 +626,26 @@ public sealed class SuwayomiImageProvider : IRemoteImageProvider
 {
     private readonly IHttpClientFactory _http;
     private readonly SuwayomiClient _client;
+    private readonly ILibraryManager _library;
 
     /// <summary>Initializes a new instance of the <see cref="SuwayomiImageProvider"/> class.</summary>
+    /// <param name="client">Shared Suwayomi client.</param>
+    /// <param name="library">Library manager.</param>
     /// <param name="http">HTTP client factory.</param>
-    /// <param name="log">Logger.</param>
-    public SuwayomiImageProvider(IHttpClientFactory http, ILogger<SuwayomiImageProvider> log)
+    public SuwayomiImageProvider(SuwayomiClient client, ILibraryManager library, IHttpClientFactory http)
     {
+        _client = client;
+        _library = library;
         _http = http;
-        _client = new SuwayomiClient(http, log);
     }
 
     /// <inheritdoc />
     public string Name => "Suwayomi";
 
     /// <inheritdoc />
-    public bool Supports(BaseItem item)
-    {
-        if (SuwayomiPlugin.Instance?.Configuration.ProvideImages == false)
-        {
-            return false;
-        }
-
-        // Series, Season, BoxSet and CollectionFolder all INHERIT from Folder, so a
-        // plain "is Folder" test also claims every TV show. A manga series folder is
-        // an exact Folder, so match the concrete type and nothing derived from it.
-        return item is Book || item?.GetType() == typeof(Folder);
-    }
+    public bool Supports(BaseItem item) =>
+        SuwayomiPlugin.Instance?.Configuration.ProvideImages != false
+        && SuwayomiClient.AppliesTo(item, _library);
 
     /// <inheritdoc />
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => new[] { ImageType.Primary };

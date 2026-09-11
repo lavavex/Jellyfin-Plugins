@@ -9,14 +9,7 @@
         <div data-role="content">
             <div class="content-primary">
                 <form id="MangaBakaConfigForm">
-                    <div class="selectContainer">
-                        <label class="selectLabel" for="ApiVersion">MangaBaka API</label>
-                        <select is="emby-select" id="ApiVersion" name="ApiVersion" class="emby-select-withcolor emby-select">
-                            <option value="v1">Stable (v1)</option>
-                            <option value="v2">Beta (v2)</option>
-                        </select>
-                        <div class="fieldDescription">v1 is the stable public API. v2 is beta and may change; use it for the same search and series endpoints when you want the newer response shape.</div>
-                    </div>
+                    <h2>Matching</h2>
                     <div class="selectContainer">
                         <label class="selectLabel" for="SeriesType">Series type to match</label>
                         <select is="emby-select" id="SeriesType" name="SeriesType" class="emby-select-withcolor emby-select">
@@ -26,22 +19,31 @@
                         </select>
                         <div class="fieldDescription">Most series exist as both a novel and a manga — pick the one this library holds.</div>
                     </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="TitleStyle">Title to write</label>
+                        <select is="emby-select" id="TitleStyle" name="TitleStyle" class="emby-select-withcolor emby-select">
+                            <option value="english">English (Mushoku Tensei: Jobless Reincarnation)</option>
+                            <option value="romanized">Romanized (Mushoku Tensei: Isekai Ittara Honki Dasu)</option>
+                            <option value="native">Native (無職転生　～異世界行ったら本気だす～)</option>
+                        </select>
+                        <div class="fieldDescription">Falls back to the others when MangaBaka has no title of the chosen kind.</div>
+                    </div>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="MinMatchScore">Minimum match score (0-100)</label>
                         <input id="MinMatchScore" name="MinMatchScore" type="number" is="emby-input" min="0" max="100" />
                         <div class="fieldDescription">Lower accepts more matches but risks wrong series. 80 is a safe default.</div>
                     </div>
-                    <div class="checkboxContainer checkboxContainer-withDescription">
-                        <label class="emby-checkbox-label">
-                            <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
-                            <span>Provide cover art from MangaBaka</span>
-                        </label>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxTags">Maximum tags per series</label>
+                        <input id="MaxTags" name="MaxTags" type="number" is="emby-input" min="0" max="20" />
+                        <div class="fieldDescription">MangaBaka carries around 180 tags per series. The most general ones are written first, spoiler tags never are, and the publication status is always written on top of this. Set 0 for no tags at all.</div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label class="emby-checkbox-label">
-                            <input id="ImportTags" name="ImportTags" type="checkbox" is="emby-checkbox" />
-                            <span>Import MangaBaka tags as Jellyfin tags</span>
+                            <input id="RestrictToBookLibraries" name="RestrictToBookLibraries" type="checkbox" is="emby-checkbox" />
+                            <span>Only touch libraries whose content type is Books</span>
                         </label>
+                        <div class="fieldDescription">Series folders in a book library are plain folders — and so is every folder in a photo library. Leave this on unless your book library is set to another type.</div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label class="emby-checkbox-label">
@@ -49,10 +51,56 @@
                             <span>Skip series rated erotica / pornographic</span>
                         </label>
                     </div>
+
+                    <h2>Local database</h2>
+                    <div class="fieldDescription" style="margin-bottom:1em;">
+                        MangaBaka publishes a nightly snapshot of its whole catalogue. With a local
+                        copy, matching a library needs no network requests at all — which is what
+                        makes refreshing everything at once practical. Download it from
+                        <b>Dashboard &rarr; Scheduled Tasks &rarr; Download MangaBaka database</b>,
+                        which then repeats weekly. The download is about 540 MB and roughly 525 MB
+                        is kept on disk under the plugin's data folder.
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="MatchSource">Match against</label>
+                        <select is="emby-select" id="MatchSource" name="MatchSource" class="emby-select-withcolor emby-select">
+                            <option value="database-then-api">Local database, then the search API</option>
+                            <option value="database-only">Local database only</option>
+                            <option value="api-only">Search API only</option>
+                        </select>
+                        <div class="fieldDescription">The local database answers exact title matches; the search API covers the rest, and is the only source until the database has been downloaded. <b>Local database only</b> keeps the plugin entirely offline &mdash; and matches nothing at all until you run the download task.</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ReplaceOnBulkRefresh" name="ReplaceOnBulkRefresh" type="checkbox" is="emby-checkbox" />
+                            <span>"Refresh MangaBaka metadata" replaces existing metadata</span>
+                        </label>
+                        <div class="fieldDescription">Off means the bulk refresh only fills gaps. On also overwrites hand-made corrections.</div>
+                    </div>
+
+                    <h2>Other</h2>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
+                            <span>Provide cover art from MangaBaka</span>
+                        </label>
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="ApiVersion">MangaBaka API</label>
+                        <select is="emby-select" id="ApiVersion" name="ApiVersion" class="emby-select-withcolor emby-select">
+                            <option value="v1">Stable (v1)</option>
+                            <option value="v2">Beta (v2)</option>
+                        </select>
+                        <div class="fieldDescription">Only affects the search fallback. v1 is the stable public API; v2 is beta and may change.</div>
+                    </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                             <span>Save</span>
                         </button>
+                    </div>
+                    <div class="fieldDescription" style="margin-top:2em;">
+                        Metadata from <a is="emby-linkbutton" class="button-link" href="https://mangabaka.org" target="_blank" rel="noopener">MangaBaka</a>,
+                        licensed CC BY-NC-SA 4.0, aggregating AniList, Kitsu, MangaUpdates, MyAnimeList and Anime-Planet.
                     </div>
                 </form>
             </div>
@@ -62,15 +110,27 @@
                 pluginUniqueId: '8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83'
             };
 
+            function mangaBakaNumber(id, fallback, min, max) {
+                var value = parseInt(document.querySelector(id).value, 10);
+                if (isNaN(value)) {
+                    return fallback;
+                }
+                return Math.min(max, Math.max(min, value));
+            }
+
             document.querySelector('#MangaBakaConfigPage')
                 .addEventListener('pageshow', function () {
                     Dashboard.showLoadingMsg();
                     ApiClient.getPluginConfiguration(MangaBakaConfig.pluginUniqueId).then(function (config) {
-                        document.querySelector('#ApiVersion').value = config.ApiVersion === 'v2' ? 'v2' : 'v1';
                         document.querySelector('#SeriesType').value = config.SeriesType || '';
+                        document.querySelector('#TitleStyle').value = config.TitleStyle || 'english';
                         document.querySelector('#MinMatchScore').value = config.MinMatchScore;
+                        document.querySelector('#MaxTags').value = config.MaxTags;
+                        document.querySelector('#ApiVersion').value = config.ApiVersion === 'v2' ? 'v2' : 'v1';
                         document.querySelector('#ProvideImages').checked = !!config.ProvideImages;
-                        document.querySelector('#ImportTags').checked = !!config.ImportTags;
+                        document.querySelector('#MatchSource').value = config.MatchSource || 'database-then-api';
+                        document.querySelector('#RestrictToBookLibraries').checked = !!config.RestrictToBookLibraries;
+                        document.querySelector('#ReplaceOnBulkRefresh').checked = !!config.ReplaceOnBulkRefresh;
                         document.querySelector('#SkipExplicit').checked = !!config.SkipExplicit;
                         Dashboard.hideLoadingMsg();
                     });
@@ -80,11 +140,15 @@
                 .addEventListener('submit', function (e) {
                     Dashboard.showLoadingMsg();
                     ApiClient.getPluginConfiguration(MangaBakaConfig.pluginUniqueId).then(function (config) {
-                        config.ApiVersion = document.querySelector('#ApiVersion').value;
                         config.SeriesType = document.querySelector('#SeriesType').value;
-                        config.MinMatchScore = parseInt(document.querySelector('#MinMatchScore').value, 10);
+                        config.TitleStyle = document.querySelector('#TitleStyle').value;
+                        config.MinMatchScore = mangaBakaNumber('#MinMatchScore', 80, 0, 100);
+                        config.MaxTags = mangaBakaNumber('#MaxTags', 8, 0, 20);
+                        config.ApiVersion = document.querySelector('#ApiVersion').value;
                         config.ProvideImages = document.querySelector('#ProvideImages').checked;
-                        config.ImportTags = document.querySelector('#ImportTags').checked;
+                        config.MatchSource = document.querySelector('#MatchSource').value;
+                        config.RestrictToBookLibraries = document.querySelector('#RestrictToBookLibraries').checked;
+                        config.ReplaceOnBulkRefresh = document.querySelector('#ReplaceOnBulkRefresh').checked;
                         config.SkipExplicit = document.querySelector('#SkipExplicit').checked;
                         ApiClient.updatePluginConfiguration(MangaBakaConfig.pluginUniqueId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);

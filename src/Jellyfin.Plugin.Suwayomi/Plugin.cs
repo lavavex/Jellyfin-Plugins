@@ -1,8 +1,11 @@
 using System.Globalization;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Jellyfin.Plugin.Suwayomi;
 
@@ -28,6 +31,13 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets a value indicating whether folder covers are served from Suwayomi.
     /// </summary>
     public bool ProvideImages { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the plugin only touches libraries
+    /// whose content type is Books. Turning this off lets it fill plain folders in
+    /// any library, which is rarely what you want: a photo library is folders too.
+    /// </summary>
+    public bool RestrictToBookLibraries { get; set; } = true;
 }
 
 /// <summary>
@@ -77,5 +87,19 @@ public class SuwayomiPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
                 "{0}.Configuration.configPage.html",
                 GetType().Namespace),
         };
+    }
+}
+
+/// <summary>
+/// Registers the shared Suwayomi client. It caches the whole Suwayomi library for
+/// ten minutes, and a refresh walks hundreds of folders — one instance for the
+/// server means one GraphQL query, not one per provider.
+/// </summary>
+public class PluginServiceRegistrator : IPluginServiceRegistrator
+{
+    /// <inheritdoc />
+    public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
+    {
+        serviceCollection.AddSingleton<SuwayomiClient>();
     }
 }

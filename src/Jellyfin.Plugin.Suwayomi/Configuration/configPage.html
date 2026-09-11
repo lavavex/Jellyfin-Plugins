@@ -26,6 +26,13 @@
                             <span>Provide series cover art from Suwayomi</span>
                         </label>
                     </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="RestrictToBookLibraries" name="RestrictToBookLibraries" type="checkbox" is="emby-checkbox" />
+                            <span>Only touch libraries whose content type is Books</span>
+                        </label>
+                        <div class="fieldDescription">Series folders in a book library are plain folders — and so is every folder in a photo library. Leave this on unless your manga library is set to another type.</div>
+                    </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                             <span>Save</span>
@@ -46,6 +53,7 @@
                         document.querySelector('#ServerUrl').value = config.ServerUrl || '';
                         document.querySelector('#StripStatsLine').checked = !!config.StripStatsLine;
                         document.querySelector('#ProvideImages').checked = !!config.ProvideImages;
+                        document.querySelector('#RestrictToBookLibraries').checked = !!config.RestrictToBookLibraries;
                         Dashboard.hideLoadingMsg();
                     });
                 });
@@ -57,6 +65,7 @@
                         config.ServerUrl = document.querySelector('#ServerUrl').value;
                         config.StripStatsLine = document.querySelector('#StripStatsLine').checked;
                         config.ProvideImages = document.querySelector('#ProvideImages').checked;
+                        config.RestrictToBookLibraries = document.querySelector('#RestrictToBookLibraries').checked;
                         ApiClient.updatePluginConfiguration(SuwayomiConfig.pluginUniqueId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                         });

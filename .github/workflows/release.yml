@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to publish (e.g. v12.0.0)'
+        description: 'Tag to publish (e.g. v12.0.0.1)'
         required: true
 
 permissions:
@@ -78,6 +78,31 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
+      # The manifest offers every past release, not just this one, and a wrong
+      # checksum there is just as install-breaking. They come from versions.json
+      # and are never recomputed, so this is the only thing checking them.
+      - name: Verify the release history still downloads
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, sys, urllib.request
+          bad = 0
+          for p in json.load(open("manifest.json")):
+              for v in p["versions"][1:]:
+                  url = v["sourceUrl"]
+                  try:
+                      with urllib.request.urlopen(url, timeout=60) as r:
+                          data = r.read()
+                  except Exception as e:
+                      print(f"FAILED {url}: {e}"); bad += 1; continue
+                  got = hashlib.md5(data).hexdigest()
+                  if got != v["checksum"]:
+                      print(f"MISMATCH {url}: versions.json={v['checksum']} downloaded={got}")
+                      bad += 1
+                  else:
+                      print(f"ok {p['name']} {v['version']} {got}")
+          sys.exit(1 if bad else 0)
+          PY
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
@@ -127,4 +152,25 @@ jobs:
               except Exception as e:
                   print(f"FAILED {img}: {e}"); bad += 1
           sys.exit(1 if bad else 0)
+          PY
+
+      # versions.json is maintained by hand — CI must not commit to a tracked
+      # branch, since the Gitea mirror would overwrite it. Print the entries to
+      # paste in so the next release keeps this one installable.
+      - name: Entries to add to versions.json
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}" python3 - <<'PY'
+          import json, os
+          tag = os.environ["TAG"]
+          for p in json.load(open("manifest.json")):
+              v = p["versions"][0]
+              print(f'\n{p["name"]}  ->  versions.json["{p["guid"]}"]')
+              print(json.dumps({
+                  "version": v["version"],
+                  "tag": tag,
+                  "asset": v["sourceUrl"].rsplit("/", 1)[-1],
+                  "checksum": v["checksum"],
+                  "timestamp": v["timestamp"],
+                  "changelog": v["changelog"],
+              }, indent=2, ensure_ascii=False))
           PY
