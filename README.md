@@ -19,13 +19,14 @@ Dashboard → Plugins → Repositories → **+**, and add this manifest URL:
 https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/manifest.json
 ```
 
-That is a file on `main`, so a new release is visible as soon as GitHub has
-the commit (the raw CDN caches it for about five minutes). Do not
-use the GitHub `/releases/latest/download/` URL: those assets are served as
-`application/octet-stream` after a redirect, and Jellyfin's catalogue will
-not parse them — you will only ever see the version already installed. The
-manifest carries every published version, so an older one can still be
-installed from the plugin's page.
+That is a file on `main`. GitHub's raw CDN caches it for about five minutes, so
+refreshing Catalog during a release will keep showing the previous version
+until that cache drops. The release workflow waits for this URL to serve the
+new version before it goes green — that is when a Catalog refresh will see it.
+Do not use the GitHub `/releases/latest/download/` URL: those assets are
+served as `application/octet-stream` after a redirect. The manifest carries
+every published version, so an older one can still be installed from the
+plugin's page.
 
 The plugins then appear under Catalog → Books. Restart Jellyfin after installing.
 
@@ -138,10 +139,10 @@ which is fine for checking the zip layout, not for the committed catalogue.
 
 3. GitHub Actions builds both plugins, packages them, regenerates
    `manifest.json`, verifies every checksum in it against what is actually
-   downloadable, publishes the zips as release assets, and commits the
-   catalogue (`manifest.json` and the new `versions.json` entries) to GitHub
-   `main`. That is what Jellyfin reads. Pull that commit onto Gitea so the
-   remotes stay in sync:
+   downloadable, publishes the zips as release assets, commits the catalogue
+   to GitHub `main`, and **waits until the raw catalogue URL actually serves
+   the new version**. The job staying yellow is that CDN wait; green means a
+   Catalog refresh will see it. Pull the catalogue commit onto Gitea:
 
    ```bash
    git pull github main && git push origin main

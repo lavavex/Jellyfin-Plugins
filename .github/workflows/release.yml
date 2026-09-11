@@ -209,3 +209,54 @@ jobs:
           fi
           git commit -m "Update catalogue to ${TAG}"
           git push origin HEAD:main
+
+      # raw.githubusercontent.com caches main for ~5 minutes. Jellyfin re-fetches
+      # on Catalog load, so a green run here is the signal that a refresh will
+      # see this version — not the zip upload, and not the git push.
+      - name: Wait until the catalogue URL serves this release
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, sys
+
+          repo = os.environ["REPO"]
+          expected = {
+              p["name"]: p["versions"][0]["version"]
+              for p in json.load(open("/tmp/catalog-manifest.json"))
+          }
+          raw = f"https://raw.githubusercontent.com/{repo}/main/manifest.json"
+          try:
+              urllib.request.urlopen(
+                  f"https://purge.jsdelivr.net/gh/{repo}@main/manifest.json",
+                  timeout=30,
+              ).read()
+              print("purged jsdelivr")
+          except Exception as e:
+              print(f"jsdelivr purge skipped: {e}")
+
+          def newest(url):
+              req = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "catalogue-wait", "Cache-Control": "no-cache"},
+              )
+              with urllib.request.urlopen(req, timeout=20) as r:
+                  body = json.load(r)
+              return {p["name"]: p["versions"][0]["version"] for p in body}
+
+          deadline = time.time() + 480
+          got = None
+          while True:
+              try:
+                  got = newest(raw)
+                  print(f"raw {got}")
+                  if got == expected:
+                      print("catalogue URL is live")
+                      sys.exit(0)
+              except Exception as e:
+                  print(f"raw fetch failed: {e}")
+              if time.time() >= deadline:
+                  print(f"FAILED: {raw} still {got}, want {expected}", file=sys.stderr)
+                  sys.exit(1)
+              time.sleep(10)
+          PY
