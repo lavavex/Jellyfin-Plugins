@@ -16,12 +16,16 @@ major, and live under the **Books** catalogue category. See
 Dashboard → Plugins → Repositories → **+**, and add this manifest URL:
 
 ```
-https://github.com/lavavex/Jellyfin-Plugins/releases/latest/download/manifest.json
+https://raw.githubusercontent.com/lavavex/Jellyfin-Plugins/main/manifest.json
 ```
 
-That URL always resolves to the newest release, so Jellyfin picks up new
-versions without you changing anything. The manifest carries every published
-version, so an older one can still be installed from the plugin's page.
+That is a file on `main`, so a new release is visible as soon as the mirror
+picks up the commit (GitHub's CDN caches it for about five minutes). Do not
+use the GitHub `/releases/latest/download/` URL: those assets are served as
+`application/octet-stream` after a redirect, and Jellyfin's catalogue will
+not parse them — you will only ever see the version already installed. The
+manifest carries every published version, so an older one can still be
+installed from the plugin's page.
 
 The plugins then appear under Catalog → Books. Restart Jellyfin after installing.
 
@@ -100,8 +104,8 @@ series, season or collection, which are also `Folder`s underneath.
 ## Development
 
 Source of truth is a private Gitea instance, push-mirrored to GitHub. Release
-zips and `manifest.json` are served from the GitHub mirror so the repository
-is usable publicly.
+zips are GitHub Release assets; `manifest.json` is committed on `main` so
+Jellyfin can fetch it from `raw.githubusercontent.com`.
 
 The build references Jellyfin 12.0.0 assemblies committed in `lib/` rather than
 NuGet packages, which pins it to that exact server version. After a Jellyfin
@@ -115,9 +119,10 @@ To build locally without releasing:
 ./build.sh [base-url]
 ```
 
-`base-url` is where `releases/` will be served from; Jellyfin downloads from
-`sourceUrl`, so it must be reachable *by the server*. It defaults to the
-"latest release" alias, which is correct for anything already published.
+`base-url` is where `releases/` will be served from; Jellyfin downloads the
+zip from `sourceUrl`, so it must be reachable *by the server*. CI passes the
+tag's release-asset URL. A local run defaults to the "latest release" alias,
+which is fine for checking the zip layout, not for the committed catalogue.
 
 ## Releasing
 
@@ -132,13 +137,15 @@ To build locally without releasing:
 
 3. GitHub Actions builds both plugins, packages them, regenerates
    `manifest.json`, verifies every checksum in it against what is actually
-   downloadable, and publishes everything as release assets.
+   downloadable, and publishes the zips (and a copy of the manifest) as
+   release assets.
 4. The final workflow step prints a JSON entry per plugin. Paste each into
-   `versions.json` and commit. That is what keeps the released version offered
-   by the *next* release's manifest — the workflow cannot commit it itself,
-   because the Gitea mirror would overwrite anything it pushed.
+   `versions.json`, copy the published `manifest.json` into the repo, and
+   commit both on Gitea. That is what the catalogue URL reads, and what keeps
+   this version offered by the *next* release — the workflow cannot commit it
+   itself, because the Gitea mirror would overwrite anything it pushed.
 
-Build output is deliberately **not** committed. Gitea is the source of truth and
+Zips are deliberately **not** committed. Gitea is the source of truth and
 push-mirrors into GitHub, so anything a workflow committed to a tracked branch
 would be overwritten by the next sync — release assets live outside that.
 

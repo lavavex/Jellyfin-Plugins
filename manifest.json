@@ -1,0 +1,56 @@
+[
+  {
+    "guid": "6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90",
+    "name": "Suwayomi Metadata",
+    "description": "Series metadata and cover art for manga libraries, read from a Suwayomi server.",
+    "overview": "Series metadata and cover art for manga libraries, read from a Suwayomi server.",
+    "owner": "roberth",
+    "category": "Books",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/suwayomi.png",
+    "versions": [
+      {
+        "version": "12.0.0.1",
+        "changelog": "The three providers now share one client, so a library refresh makes a single GraphQL query to Suwayomi instead of three. New setting limits the plugin to libraries whose content type is Books, so it no longer claims plain folders in photo or mixed libraries.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/suwayomi_metadata_12.0.0.1.zip",
+        "checksum": "36d15b6142d589a57267c8d2ae3dd49b",
+        "timestamp": "2026-09-11T02:11:36Z"
+      },
+      {
+        "version": "12.0.0.0",
+        "changelog": "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Server URL starts blank.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0/suwayomi_metadata_12.0.0.0.zip",
+        "checksum": "983b5dc4efa46517f434007392e742d1",
+        "timestamp": "2026-09-11T00:48:56Z"
+      }
+    ]
+  },
+  {
+    "guid": "8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83",
+    "name": "MangaBaka",
+    "description": "Series metadata and cover art for manga and light novel libraries, from MangaBaka.",
+    "overview": "Series metadata and cover art for manga and light novel libraries, from MangaBaka.",
+    "owner": "roberth",
+    "category": "Books",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/mangabaka.png",
+    "versions": [
+      {
+        "version": "12.0.0.1",
+        "changelog": "Adds a local copy of MangaBaka's nightly database: download it from Dashboard > Scheduled Tasks and a whole-library refresh then matches offline, with no API requests at all. A second task refreshes every book library in one go. Fixes series being titled in Chinese or Japanese rather than English, the plugin searching MangaBaka for plain folders in every library on the server, and roughly 180 tags being written per series (now capped, 8 by default, spoilers dropped). Adds a title-language setting, matching for non-Latin titles, request throttling, and a link back to the MangaBaka page.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/mangabaka_12.0.0.1.zip",
+        "checksum": "a958fa5bb05c1dd25641794878e8b10a",
+        "timestamp": "2026-09-11T02:11:36Z"
+      },
+      {
+        "version": "12.0.0.0",
+        "changelog": "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Reads titles, publication dates, and tags per the MangaBaka spec. Optional beta (v2) API.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/v12.0.0/mangabaka_12.0.0.0.zip",
+        "checksum": "bd416225317fc253bd5f601635fa790c",
+        "timestamp": "2026-09-11T00:48:58Z"
+      }
+    ]
+  }
+]

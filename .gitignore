@@ -2,9 +2,10 @@ bin/
 obj/
 *.user
 
-# Build output — published as GitHub Release assets by CI, not committed.
+# Zips are GitHub Release assets. manifest.json is committed so Jellyfin can
+# read it from raw.githubusercontent.com (GitHub's /releases/latest/download
+# serves application/octet-stream, which the catalogue will not parse).
 releases/
-manifest.json
 
 # macOS
 .DS_Store

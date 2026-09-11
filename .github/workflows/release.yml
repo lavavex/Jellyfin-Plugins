@@ -5,8 +5,12 @@ name: Build and publish release
 # be overwritten by the next mirror sync. Everything it produces is published as
 # GitHub Release assets instead, which the mirror does not touch.
 #
-# Jellyfin then reads a stable "latest release" manifest URL:
-#   https://github.com/<owner>/<repo>/releases/latest/download/manifest.json
+# Jellyfin reads the committed manifest from raw.githubusercontent.com:
+#   https://raw.githubusercontent.com/<owner>/<repo>/main/manifest.json
+# GitHub Release asset URLs are application/octet-stream after a redirect,
+# which the catalogue will not parse. After this job finishes, copy the
+# published manifest.json into the Gitea repo alongside the versions.json
+# entries printed at the end.
 
 on:
   push:
