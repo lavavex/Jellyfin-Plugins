@@ -48,10 +48,24 @@ public static class MangaBakaWriter
             }
         }
 
-        if (series.Year is > 0 && item.ProductionYear != series.Year)
+        if (series.Year is int year && MangaBakaSeries.IsPlausibleYear(year))
         {
-            item.ProductionYear = series.Year;
-            changed = true;
+            if (item.ProductionYear != year)
+            {
+                item.ProductionYear = year;
+                changed = true;
+            }
+
+            // EPUB/Calibre often leaves PremiereDate at year 100; the UI shows that
+            // instead of ProductionYear, so write a real date or the card stays "100".
+            var premiere = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            if (item.PremiereDate is null
+                || item.PremiereDate.Value.Year != series.Year
+                || !MangaBakaSeries.IsPlausibleYear(item.PremiereDate.Value.Year))
+            {
+                item.PremiereDate = premiere;
+                changed = true;
+            }
         }
 
         var genres = series.Genres.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();

@@ -568,15 +568,22 @@ public sealed class MangaBakaSeries
             var start = Str(pub, "start_date");
             if (start is { Length: >= 4 }
                 && int.TryParse(start.AsSpan(0, 4), NumberStyles.None, CultureInfo.InvariantCulture, out var y)
-                && y > 0)
+                && IsPlausibleYear(y))
             {
                 return y;
             }
         }
 
         var year = Int(e, "year");
-        return year is > 0 ? year : null;
+        return IsPlausibleYear(year) ? year : null;
     }
+
+    /// <summary>
+    /// Calibre and some EPUBs store an unset date as year 100 / 0100-12-31, which
+    /// <c>DateTime.TryParse</c> happily accepts. Real light novels are not that old.
+    /// </summary>
+    internal static bool IsPlausibleYear(int? year) =>
+        year is >= 1800 and <= 2100;
 
     /// <summary>v1 sends <c>cover.raw.url</c>; v2 sends <c>cover.raw</c> as the URL itself.</summary>
     private static string? ReadCoverUrl(JsonElement e)

@@ -6,7 +6,17 @@ component tracks the Jellyfin major they target.
 The same notes are published in `manifest.json`, which carries every release —
 Jellyfin's plugin page lets you install an older version from it.
 
-## 12.0.0.3 — unreleased
+## 12.0.0.4 — unreleased
+
+### MangaBaka
+
+**Fixed: some books showed year 100.** Calibre and many EPUBs store an empty
+publication date as `0100-12-31`. Jellyfin's EPUB reader parses that as year
+100, and we only set `ProductionYear`, so the card kept showing 100. The
+plugin now writes `PremiereDate` from MangaBaka's published year and ignores
+years outside 1800–2100.
+
+## 12.0.0.3 — 2026-09-11
 
 ### MangaBaka and Suwayomi Metadata
 
