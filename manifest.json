@@ -6,8 +6,16 @@
     "overview": "Series metadata and cover art for manga libraries, read from a Suwayomi server.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/suwayomi.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/suwayomi.png",
     "versions": [
+      {
+        "version": "12.0.0.2",
+        "changelog": "Image Fetchers (Books) now lists Suwayomi. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports().",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/suwayomi_metadata_12.0.0.2.zip",
+        "checksum": "003b7e7998f117428d2fc976cc8ec55b",
+        "timestamp": "2026-09-11T02:39:50Z"
+      },
       {
         "version": "12.0.0.1",
         "changelog": "The three providers now share one client, so a library refresh makes a single GraphQL query to Suwayomi instead of three. New setting limits the plugin to libraries whose content type is Books, so it no longer claims plain folders in photo or mixed libraries.",
@@ -33,8 +41,16 @@
     "overview": "Series metadata and cover art for manga and light novel libraries, from MangaBaka.",
     "owner": "roberth",
     "category": "Books",
-    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.1/mangabaka.png",
+    "imageUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/mangabaka.png",
     "versions": [
+      {
+        "version": "12.0.0.2",
+        "changelog": "Image Fetchers (Books) now lists MangaBaka. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports().",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/lavavex/Jellyfin-Plugins/releases/download/12.0.0.2/mangabaka_12.0.0.2.zip",
+        "checksum": "296d155a94435654e276d7d336956764",
+        "timestamp": "2026-09-11T02:39:50Z"
+      },
       {
         "version": "12.0.0.1",
         "changelog": "Adds a local copy of MangaBaka's nightly database: download it from Dashboard > Scheduled Tasks and a whole-library refresh then matches offline, with no API requests at all. A second task refreshes every book library in one go. Fixes series being titled in Chinese or Japanese rather than English, the plugin searching MangaBaka for plain folders in every library on the server, and roughly 180 tags being written per series (now capped, 8 by default, spoilers dropped). Adds a title-language setting, matching for non-Latin titles, request throttling, and a link back to the MangaBaka page.",

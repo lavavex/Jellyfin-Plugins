@@ -25,6 +25,14 @@
       "checksum": "36d15b6142d589a57267c8d2ae3dd49b",
       "timestamp": "2026-09-11T02:11:36Z",
       "changelog": "The three providers now share one client, so a library refresh makes a single GraphQL query to Suwayomi instead of three. New setting limits the plugin to libraries whose content type is Books, so it no longer claims plain folders in photo or mixed libraries."
+    },
+    {
+      "version": "12.0.0.2",
+      "tag": "12.0.0.2",
+      "asset": "suwayomi_metadata_12.0.0.2.zip",
+      "checksum": "003b7e7998f117428d2fc976cc8ec55b",
+      "timestamp": "2026-09-11T02:39:50Z",
+      "changelog": "Image Fetchers (Books) now lists Suwayomi. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
     }
   ],
   "8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83": [
@@ -43,6 +51,14 @@
       "checksum": "a958fa5bb05c1dd25641794878e8b10a",
       "timestamp": "2026-09-11T02:11:36Z",
       "changelog": "Adds a local copy of MangaBaka's nightly database: download it from Dashboard > Scheduled Tasks and a whole-library refresh then matches offline, with no API requests at all. A second task refreshes every book library in one go. Fixes series being titled in Chinese or Japanese rather than English, the plugin searching MangaBaka for plain folders in every library on the server, and roughly 180 tags being written per series (now capped, 8 by default, spoilers dropped). Adds a title-language setting, matching for non-Latin titles, request throttling, and a link back to the MangaBaka page."
+    },
+    {
+      "version": "12.0.0.2",
+      "tag": "12.0.0.2",
+      "asset": "mangabaka_12.0.0.2.zip",
+      "checksum": "296d155a94435654e276d7d336956764",
+      "timestamp": "2026-09-11T02:39:50Z",
+      "changelog": "Image Fetchers (Books) now lists MangaBaka. The library-options page probes providers with a dummy Book that has no parent library, so the Books-library check no longer lives in Supports()."
     }
   ]
 }

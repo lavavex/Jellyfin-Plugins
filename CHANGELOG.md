@@ -6,7 +6,7 @@ component tracks the Jellyfin major they target.
 The same notes are published in `manifest.json`, which carries every release —
 Jellyfin's plugin page lets you install an older version from it.
 
-## 12.0.0.2 — unreleased
+## 12.0.0.2 — 2026-09-11
 
 ### MangaBaka and Suwayomi Metadata
 
