@@ -1,51 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><title>Suwayomi Metadata</title></head>
+<head>
+    <meta charset="utf-8">
+    <title>Suwayomi Metadata</title>
+</head>
 <body>
-<div id="SuwayomiConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
-     data-controller="__plugin/Suwayomi Metadata">
-  <div data-role="content"><div class="content-primary">
-    <form id="SuwayomiConfigForm">
-      <div class="inputContainer">
-        <label class="inputLabel inputLabelUnfocused" for="ServerUrl">Suwayomi server URL</label>
-        <input id="ServerUrl" name="ServerUrl" type="text" is="emby-input" />
-        <div class="fieldDescription">e.g. http://localhost:4567 &mdash; leave blank to disable</div>
-      </div>
-      <label class="checkboxContainer">
-        <input id="StripStatsLine" name="StripStatsLine" type="checkbox" is="emby-checkbox" />
-        <span>Strip the "Rating / Bookmarks" line from the synopsis (rating is kept as Community Rating)</span>
-      </label>
-      <label class="checkboxContainer">
-        <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
-        <span>Provide series cover art from Suwayomi</span>
-      </label>
-      <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
-    </form>
-  </div></div>
-<script type="text/javascript">
-  var SuwayomiPluginId = "6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90";
-  document.querySelector('#SuwayomiConfigPage').addEventListener('pageshow', function () {
-    Dashboard.showLoadingMsg();
-    ApiClient.getPluginConfiguration(SuwayomiPluginId).then(function (c) {
-      document.querySelector('#ServerUrl').value = c.ServerUrl || '';
-      document.querySelector('#StripStatsLine').checked = !!c.StripStatsLine;
-      document.querySelector('#ProvideImages').checked = !!c.ProvideImages;
-      Dashboard.hideLoadingMsg();
-    });
-  });
-  document.querySelector('#SuwayomiConfigForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    Dashboard.showLoadingMsg();
-    ApiClient.getPluginConfiguration(SuwayomiPluginId).then(function (c) {
-      c.ServerUrl = document.querySelector('#ServerUrl').value;
-      c.StripStatsLine = document.querySelector('#StripStatsLine').checked;
-      c.ProvideImages = document.querySelector('#ProvideImages').checked;
-      ApiClient.updatePluginConfiguration(SuwayomiPluginId, c)
-        .then(Dashboard.processPluginConfigurationUpdateResult);
-    });
-    return false;
-  });
-</script>
-</div>
+    <div id="SuwayomiConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="SuwayomiConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ServerUrl">Suwayomi server URL</label>
+                        <input id="ServerUrl" name="ServerUrl" type="text" is="emby-input" />
+                        <div class="fieldDescription">e.g. http://localhost:4567 — leave blank to disable</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="StripStatsLine" name="StripStatsLine" type="checkbox" is="emby-checkbox" />
+                            <span>Strip the "Rating / Bookmarks" line from the synopsis (rating is kept as Community Rating)</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
+                            <span>Provide series cover art from Suwayomi</span>
+                        </label>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var SuwayomiConfig = {
+                pluginUniqueId: '6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90'
+            };
+
+            document.querySelector('#SuwayomiConfigPage')
+                .addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(SuwayomiConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#ServerUrl').value = config.ServerUrl || '';
+                        document.querySelector('#StripStatsLine').checked = !!config.StripStatsLine;
+                        document.querySelector('#ProvideImages').checked = !!config.ProvideImages;
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+            document.querySelector('#SuwayomiConfigForm')
+                .addEventListener('submit', function (e) {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(SuwayomiConfig.pluginUniqueId).then(function (config) {
+                        config.ServerUrl = document.querySelector('#ServerUrl').value;
+                        config.StripStatsLine = document.querySelector('#StripStatsLine').checked;
+                        config.ProvideImages = document.querySelector('#ProvideImages').checked;
+                        ApiClient.updatePluginConfiguration(SuwayomiConfig.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+
+                    e.preventDefault();
+                    return false;
+                });
+        </script>
+    </div>
 </body>
 </html>

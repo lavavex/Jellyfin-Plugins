@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -80,6 +81,9 @@ public sealed class SuwayomiClient
     /// <summary>Gets a value indicating whether a server URL has been configured.</summary>
     public static bool IsConfigured => !string.IsNullOrWhiteSpace(BaseUrl);
 
+    /// <summary>Stored on items so a later refresh can skip search.</summary>
+    public const string ProviderId = "Suwayomi";
+
     /// <summary>
     /// Reproduces Suwayomi's own folder naming so a path can be mapped back to a title.
     /// Illegal characters become '_', and trailing dots/spaces are stripped - both rules
@@ -148,19 +152,37 @@ public sealed class SuwayomiClient
         return description.TrimStart('\r', '\n', ' ').TrimEnd();
     }
 
-    /// <summary>Finds the Suwayomi entry matching a folder path, if any.</summary>
-    /// <param name="path">Folder path on disk.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The matching manga, or null.</returns>
-    public async Task<SuwayomiManga?> MatchFolderAsync(string? path, CancellationToken ct)
+    /// <summary>
+    /// Series-folder path for a library item. Book files live inside the series
+    /// folder, so a file path is walked up one level; a directory is used as-is.
+    /// </summary>
+    /// <param name="path">File or folder path.</param>
+    /// <returns>The series folder path, or null.</returns>
+    public static string? SeriesPath(string? path)
     {
         if (string.IsNullOrEmpty(path))
         {
             return null;
         }
 
+        var p = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return Path.HasExtension(p) ? Path.GetDirectoryName(p) : p;
+    }
+
+    /// <summary>Finds the Suwayomi entry matching a folder or book-file path, if any.</summary>
+    /// <param name="path">Folder or book file path on disk.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching manga, or null.</returns>
+    public async Task<SuwayomiManga?> MatchFolderAsync(string? path, CancellationToken ct)
+    {
+        var folder = SeriesPath(path);
+        if (string.IsNullOrEmpty(folder))
+        {
+            return null;
+        }
+
         // .../<source display name>/<sanitised title>
-        var dir = new DirectoryInfo(path.TrimEnd('/'));
+        var dir = new DirectoryInfo(folder);
         var source = dir.Parent?.Name;
         if (string.IsNullOrEmpty(source))
         {
@@ -169,6 +191,37 @@ public sealed class SuwayomiClient
 
         var map = await GetLibraryAsync(ct).ConfigureAwait(false);
         return map is not null && map.TryGetValue(Key(source, dir.Name), out var manga) ? manga : null;
+    }
+
+    /// <summary>Finds a library entry by Suwayomi manga id.</summary>
+    /// <param name="id">Suwayomi manga id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching manga, or null.</returns>
+    public async Task<SuwayomiManga?> GetByIdAsync(int id, CancellationToken ct)
+    {
+        var map = await GetLibraryAsync(ct).ConfigureAwait(false);
+        return map?.Values.FirstOrDefault(m => m.Id == id);
+    }
+
+    /// <summary>Searches the cached Suwayomi library by title.</summary>
+    /// <param name="title">Series title.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Matching manga, possibly empty.</returns>
+    public async Task<IReadOnlyList<SuwayomiManga>> SearchAsync(string title, CancellationToken ct)
+    {
+        var map = await GetLibraryAsync(ct).ConfigureAwait(false);
+        if (map is null || string.IsNullOrWhiteSpace(title))
+        {
+            return Array.Empty<SuwayomiManga>();
+        }
+
+        var want = Sanitize(title).ToLowerInvariant();
+        return map.Values
+            .Where(m => !string.IsNullOrEmpty(m.Title)
+                && Sanitize(m.Title!).ToLowerInvariant().Contains(want, StringComparison.Ordinal))
+            .GroupBy(m => m.Id)
+            .Select(g => g.First())
+            .ToList();
     }
 
     private async Task<Dictionary<string, SuwayomiManga>?> GetLibraryAsync(CancellationToken ct)
@@ -257,6 +310,164 @@ public sealed class SuwayomiClient
 
         static string? Str(JsonElement e, string name) =>
             e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+    }
+}
+
+/// <summary>
+/// Book metadata from Suwayomi. This is the provider that appears in a book
+/// library's metadata-downloader list, matching Google Books / Comic Vine.
+/// Matching is by the series folder path Suwayomi writes to disk.
+/// </summary>
+public sealed class SuwayomiMetadataProvider : IRemoteMetadataProvider<Book, BookInfo>
+{
+    private readonly IHttpClientFactory _http;
+    private readonly SuwayomiClient _client;
+    private readonly ILogger<SuwayomiMetadataProvider> _log;
+
+    /// <summary>Initializes a new instance of the <see cref="SuwayomiMetadataProvider"/> class.</summary>
+    /// <param name="http">HTTP client factory.</param>
+    /// <param name="log">Logger.</param>
+    public SuwayomiMetadataProvider(IHttpClientFactory http, ILogger<SuwayomiMetadataProvider> log)
+    {
+        _http = http;
+        _log = log;
+        _client = new SuwayomiClient(http, log);
+    }
+
+    /// <inheritdoc />
+    public string Name => "Suwayomi";
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(BookInfo searchInfo, CancellationToken cancellationToken)
+    {
+        if (int.TryParse(searchInfo.GetProviderId(SuwayomiClient.ProviderId), out var id) && id > 0)
+        {
+            var byId = await _client.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+            return byId is null ? Array.Empty<RemoteSearchResult>() : new[] { ToSearchResult(byId) };
+        }
+
+        var manga = await _client.MatchFolderAsync(searchInfo.Path, cancellationToken).ConfigureAwait(false);
+        if (manga is not null)
+        {
+            return new[] { ToSearchResult(manga) };
+        }
+
+        var title = !string.IsNullOrWhiteSpace(searchInfo.SeriesName) ? searchInfo.SeriesName : searchInfo.Name;
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return Array.Empty<RemoteSearchResult>();
+        }
+
+        var results = await _client.SearchAsync(title, cancellationToken).ConfigureAwait(false);
+        return results.Select(ToSearchResult).ToArray();
+    }
+
+    /// <inheritdoc />
+    public async Task<MetadataResult<Book>> GetMetadata(BookInfo info, CancellationToken cancellationToken)
+    {
+        var result = new MetadataResult<Book>();
+        var manga = await ResolveAsync(info, cancellationToken).ConfigureAwait(false);
+        if (manga is null)
+        {
+            return result;
+        }
+
+        result.Item = ToBook(manga);
+        result.HasMetadata = true;
+        if (!string.IsNullOrWhiteSpace(manga.Author))
+        {
+            result.AddPerson(new PersonInfo { Name = manga.Author, Type = PersonKind.Author });
+        }
+
+        if (!string.IsNullOrWhiteSpace(manga.Artist)
+            && !string.Equals(manga.Artist, manga.Author, StringComparison.OrdinalIgnoreCase))
+        {
+            result.AddPerson(new PersonInfo { Name = manga.Artist, Type = PersonKind.Artist });
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public Task<HttpResponseMessage> GetImageResponse(string url, CancellationToken cancellationToken)
+    {
+        var client = _http.CreateClient(NamedClient.Default);
+        return client.GetAsync(new Uri(url), cancellationToken);
+    }
+
+    internal async Task<SuwayomiManga?> ResolveAsync(BookInfo info, CancellationToken ct)
+    {
+        if (int.TryParse(info.GetProviderId(SuwayomiClient.ProviderId), out var id) && id > 0)
+        {
+            var byId = await _client.GetByIdAsync(id, ct).ConfigureAwait(false);
+            if (byId is not null)
+            {
+                return byId;
+            }
+        }
+
+        return await _client.MatchFolderAsync(info.Path, ct).ConfigureAwait(false);
+    }
+
+    internal static Book ToBook(SuwayomiManga manga)
+    {
+        var book = new Book();
+        if (!string.IsNullOrWhiteSpace(manga.Title))
+        {
+            book.SeriesName = manga.Title;
+        }
+
+        var overview = SuwayomiClient.CleanDescription(manga.Description, out var rating);
+        if (!string.IsNullOrWhiteSpace(overview))
+        {
+            book.Overview = overview;
+        }
+
+        if (rating.HasValue)
+        {
+            book.CommunityRating = rating;
+        }
+
+        if (manga.Genre is { Count: > 0 })
+        {
+            foreach (var genre in manga.Genre)
+            {
+                book.AddGenre(genre);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(manga.SourceName))
+        {
+            book.AddStudio(manga.SourceName!);
+        }
+
+        if (!string.IsNullOrWhiteSpace(manga.Status))
+        {
+            book.AddTag(manga.Status!);
+        }
+
+        if (manga.Id > 0)
+        {
+            book.SetProviderId(SuwayomiClient.ProviderId, manga.Id.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return book;
+    }
+
+    private static RemoteSearchResult ToSearchResult(SuwayomiManga manga)
+    {
+        var remote = new RemoteSearchResult
+        {
+            SearchProviderName = "Suwayomi",
+            Name = manga.Title,
+            Overview = SuwayomiClient.CleanDescription(manga.Description, out _),
+        };
+        if (manga.Id > 0)
+        {
+            remote.SetProviderId(SuwayomiClient.ProviderId, manga.Id.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return remote;
     }
 }
 
@@ -359,6 +570,16 @@ public sealed class SuwayomiFolderMetadataProvider : ICustomMetadataProvider<Fol
             updated = ItemUpdateType.MetadataDownload;
         }
 
+        if (manga.Id > 0)
+        {
+            var sid = manga.Id.ToString(CultureInfo.InvariantCulture);
+            if (!string.Equals(item.GetProviderId(SuwayomiClient.ProviderId), sid, StringComparison.Ordinal))
+            {
+                item.SetProviderId(SuwayomiClient.ProviderId, sid);
+                updated = ItemUpdateType.MetadataDownload;
+            }
+        }
+
         if (updated != ItemUpdateType.None)
         {
             _log.LogDebug("Suwayomi: filled metadata for {Name}", item.Name);
@@ -368,16 +589,16 @@ public sealed class SuwayomiFolderMetadataProvider : ICustomMetadataProvider<Fol
     }
 }
 
-/// <summary>Serves series-folder cover art straight from Suwayomi.</summary>
-public sealed class SuwayomiFolderImageProvider : IRemoteImageProvider
+/// <summary>Serves cover art straight from Suwayomi for books and series folders.</summary>
+public sealed class SuwayomiImageProvider : IRemoteImageProvider
 {
     private readonly IHttpClientFactory _http;
     private readonly SuwayomiClient _client;
 
-    /// <summary>Initializes a new instance of the <see cref="SuwayomiFolderImageProvider"/> class.</summary>
+    /// <summary>Initializes a new instance of the <see cref="SuwayomiImageProvider"/> class.</summary>
     /// <param name="http">HTTP client factory.</param>
     /// <param name="log">Logger.</param>
-    public SuwayomiFolderImageProvider(IHttpClientFactory http, ILogger<SuwayomiFolderImageProvider> log)
+    public SuwayomiImageProvider(IHttpClientFactory http, ILogger<SuwayomiImageProvider> log)
     {
         _http = http;
         _client = new SuwayomiClient(http, log);
@@ -389,15 +610,15 @@ public sealed class SuwayomiFolderImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public bool Supports(BaseItem item)
     {
-        // Series, Season, BoxSet and CollectionFolder all INHERIT from Folder, so a
-        // plain "is Folder" test also claims every TV show. A manga series folder is
-        // an exact Folder, so match the concrete type and nothing derived from it.
-        if (item?.GetType() != typeof(Folder))
+        if (SuwayomiPlugin.Instance?.Configuration.ProvideImages == false)
         {
             return false;
         }
 
-        return SuwayomiPlugin.Instance?.Configuration.ProvideImages != false;
+        // Series, Season, BoxSet and CollectionFolder all INHERIT from Folder, so a
+        // plain "is Folder" test also claims every TV show. A manga series folder is
+        // an exact Folder, so match the concrete type and nothing derived from it.
+        return item is Book || item?.GetType() == typeof(Folder);
     }
 
     /// <inheritdoc />
@@ -406,7 +627,13 @@ public sealed class SuwayomiFolderImageProvider : IRemoteImageProvider
     /// <inheritdoc />
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        var manga = await _client.MatchFolderAsync(item.Path, cancellationToken).ConfigureAwait(false);
+        SuwayomiManga? manga = null;
+        if (int.TryParse(item.GetProviderId(SuwayomiClient.ProviderId), out var id) && id > 0)
+        {
+            manga = await _client.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        }
+
+        manga ??= await _client.MatchFolderAsync(item.Path, cancellationToken).ConfigureAwait(false);
         if (manga is null)
         {
             return Array.Empty<RemoteImageInfo>();
@@ -433,4 +660,20 @@ public sealed class SuwayomiFolderImageProvider : IRemoteImageProvider
         var client = _http.CreateClient(NamedClient.Default);
         return client.GetAsync(new Uri(url), cancellationToken);
     }
+}
+
+/// <summary>Lets Identify store a Suwayomi manga id on a book.</summary>
+public sealed class SuwayomiExternalId : IExternalId
+{
+    /// <inheritdoc />
+    public string ProviderName => "Suwayomi";
+
+    /// <inheritdoc />
+    public string Key => SuwayomiClient.ProviderId;
+
+    /// <inheritdoc />
+    public ExternalIdMediaType? Type => ExternalIdMediaType.Book;
+
+    /// <inheritdoc />
+    public bool Supports(IHasProviderIds item) => item is Book || item?.GetType() == typeof(Folder);
 }

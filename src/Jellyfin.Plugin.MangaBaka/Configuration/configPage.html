@@ -1,74 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><title>MangaBaka</title></head>
+<head>
+    <meta charset="utf-8">
+    <title>MangaBaka</title>
+</head>
 <body>
-<div id="MangaBakaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
-     data-controller="__plugin/MangaBaka">
-  <div data-role="content"><div class="content-primary">
-    <form id="MangaBakaConfigForm">
-      <div class="inputContainer">
-        <label class="inputLabel inputLabelUnfocused" for="ApiUrl">MangaBaka API URL</label>
-        <input id="ApiUrl" name="ApiUrl" type="text" is="emby-input" />
-      </div>
-      <div class="selectContainer">
-        <label class="selectLabel" for="SeriesType">Series type to match</label>
-        <select id="SeriesType" name="SeriesType" is="emby-select">
-          <option value="novel">Light novels</option>
-          <option value="manga">Manga</option>
-          <option value="">Any</option>
-        </select>
-        <div class="fieldDescription">Most series exist as both a novel and a manga — pick the one this library holds.</div>
-      </div>
-      <div class="inputContainer">
-        <label class="inputLabel inputLabelUnfocused" for="MinMatchScore">Minimum match score (0-100)</label>
-        <input id="MinMatchScore" name="MinMatchScore" type="number" min="0" max="100" is="emby-input" />
-        <div class="fieldDescription">Lower accepts more matches but risks wrong series. 80 is a safe default.</div>
-      </div>
-      <label class="checkboxContainer">
-        <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
-        <span>Provide cover art from MangaBaka</span>
-      </label>
-      <label class="checkboxContainer">
-        <input id="ImportTags" name="ImportTags" type="checkbox" is="emby-checkbox" />
-        <span>Import MangaBaka tags as Jellyfin tags</span>
-      </label>
-      <label class="checkboxContainer">
-        <input id="SkipExplicit" name="SkipExplicit" type="checkbox" is="emby-checkbox" />
-        <span>Skip series rated erotica / pornographic</span>
-      </label>
-      <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
-    </form>
-  </div></div>
-<script type="text/javascript">
-  var MangaBakaPluginId = "8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83";
-  document.querySelector('#MangaBakaConfigPage').addEventListener('pageshow', function () {
-    Dashboard.showLoadingMsg();
-    ApiClient.getPluginConfiguration(MangaBakaPluginId).then(function (c) {
-      document.querySelector('#ApiUrl').value = c.ApiUrl || '';
-      document.querySelector('#SeriesType').value = c.SeriesType || '';
-      document.querySelector('#MinMatchScore').value = c.MinMatchScore;
-      document.querySelector('#ProvideImages').checked = !!c.ProvideImages;
-      document.querySelector('#ImportTags').checked = !!c.ImportTags;
-      document.querySelector('#SkipExplicit').checked = !!c.SkipExplicit;
-      Dashboard.hideLoadingMsg();
-    });
-  });
-  document.querySelector('#MangaBakaConfigForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    Dashboard.showLoadingMsg();
-    ApiClient.getPluginConfiguration(MangaBakaPluginId).then(function (c) {
-      c.ApiUrl = document.querySelector('#ApiUrl').value;
-      c.SeriesType = document.querySelector('#SeriesType').value;
-      c.MinMatchScore = parseInt(document.querySelector('#MinMatchScore').value, 10);
-      c.ProvideImages = document.querySelector('#ProvideImages').checked;
-      c.ImportTags = document.querySelector('#ImportTags').checked;
-      c.SkipExplicit = document.querySelector('#SkipExplicit').checked;
-      ApiClient.updatePluginConfiguration(MangaBakaPluginId, c)
-        .then(Dashboard.processPluginConfigurationUpdateResult);
-    });
-    return false;
-  });
-</script>
-</div>
+    <div id="MangaBakaConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="MangaBakaConfigForm">
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="ApiVersion">MangaBaka API</label>
+                        <select is="emby-select" id="ApiVersion" name="ApiVersion" class="emby-select-withcolor emby-select">
+                            <option value="v1">Stable (v1)</option>
+                            <option value="v2">Beta (v2)</option>
+                        </select>
+                        <div class="fieldDescription">v1 is the stable public API. v2 is beta and may change; use it for the same search and series endpoints when you want the newer response shape.</div>
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="SeriesType">Series type to match</label>
+                        <select is="emby-select" id="SeriesType" name="SeriesType" class="emby-select-withcolor emby-select">
+                            <option value="novel">Light novels</option>
+                            <option value="manga">Manga</option>
+                            <option value="">Any</option>
+                        </select>
+                        <div class="fieldDescription">Most series exist as both a novel and a manga — pick the one this library holds.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MinMatchScore">Minimum match score (0-100)</label>
+                        <input id="MinMatchScore" name="MinMatchScore" type="number" is="emby-input" min="0" max="100" />
+                        <div class="fieldDescription">Lower accepts more matches but risks wrong series. 80 is a safe default.</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ProvideImages" name="ProvideImages" type="checkbox" is="emby-checkbox" />
+                            <span>Provide cover art from MangaBaka</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="ImportTags" name="ImportTags" type="checkbox" is="emby-checkbox" />
+                            <span>Import MangaBaka tags as Jellyfin tags</span>
+                        </label>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="SkipExplicit" name="SkipExplicit" type="checkbox" is="emby-checkbox" />
+                            <span>Skip series rated erotica / pornographic</span>
+                        </label>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var MangaBakaConfig = {
+                pluginUniqueId: '8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83'
+            };
+
+            document.querySelector('#MangaBakaConfigPage')
+                .addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(MangaBakaConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#ApiVersion').value = config.ApiVersion === 'v2' ? 'v2' : 'v1';
+                        document.querySelector('#SeriesType').value = config.SeriesType || '';
+                        document.querySelector('#MinMatchScore').value = config.MinMatchScore;
+                        document.querySelector('#ProvideImages').checked = !!config.ProvideImages;
+                        document.querySelector('#ImportTags').checked = !!config.ImportTags;
+                        document.querySelector('#SkipExplicit').checked = !!config.SkipExplicit;
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+            document.querySelector('#MangaBakaConfigForm')
+                .addEventListener('submit', function (e) {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(MangaBakaConfig.pluginUniqueId).then(function (config) {
+                        config.ApiVersion = document.querySelector('#ApiVersion').value;
+                        config.SeriesType = document.querySelector('#SeriesType').value;
+                        config.MinMatchScore = parseInt(document.querySelector('#MinMatchScore').value, 10);
+                        config.ProvideImages = document.querySelector('#ProvideImages').checked;
+                        config.ImportTags = document.querySelector('#ImportTags').checked;
+                        config.SkipExplicit = document.querySelector('#SkipExplicit').checked;
+                        ApiClient.updatePluginConfiguration(MangaBakaConfig.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+
+                    e.preventDefault();
+                    return false;
+                });
+        </script>
+    </div>
 </body>
 </html>

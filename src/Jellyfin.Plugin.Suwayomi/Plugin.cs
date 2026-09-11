@@ -34,9 +34,9 @@ public class PluginConfiguration : BasePluginConfiguration
 /// Pulls manga metadata for series folders straight from Suwayomi.
 ///
 /// Jellyfin already reads per-chapter metadata out of the ComicInfo.xml that
-/// Suwayomi embeds in each CBZ, but nothing populates the *series folder* -
-/// there is no built-in local metadata provider bound to Folder. This plugin
-/// fills that gap by matching each folder back to its Suwayomi library entry.
+/// Suwayomi embeds in each CBZ, but nothing populates the *series folder*.
+/// This plugin fills that gap with <c>IRemoteMetadataProvider&lt;Book, BookInfo&gt;</c>
+/// (same as Google Books / Comic Vine) plus a folder provider for the series directory.
 /// </summary>
 public class SuwayomiPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {

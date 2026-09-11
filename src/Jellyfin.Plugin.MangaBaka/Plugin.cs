@@ -9,8 +9,11 @@ namespace Jellyfin.Plugin.MangaBaka;
 /// <summary>Plugin configuration.</summary>
 public class PluginConfiguration : BasePluginConfiguration
 {
-    /// <summary>Gets or sets the MangaBaka API base URL.</summary>
-    public string ApiUrl { get; set; } = "https://api.mangabaka.org";
+    /// <summary>
+    /// Gets or sets the MangaBaka API channel: "v1" (stable) or "v2" (beta).
+    /// Search and get-by-id exist on both; v2 is still marked beta in the spec.
+    /// </summary>
+    public string ApiVersion { get; set; } = "v1";
 
     /// <summary>
     /// Gets or sets which MangaBaka series type to match against:
@@ -44,8 +47,8 @@ public class PluginConfiguration : BasePluginConfiguration
 /// Metadata for manga and light novel series folders, sourced from MangaBaka.
 ///
 /// Jellyfin models a book series folder as a plain <c>Folder</c>, and no built-in
-/// provider populates it — so this binds <c>ICustomMetadataProvider&lt;Folder&gt;</c>
-/// rather than the usual <c>IRemoteMetadataProvider&lt;Book&gt;</c>.
+/// provider populates it — so this binds <c>IRemoteMetadataProvider&lt;Book, BookInfo&gt;</c>
+/// (same as Google Books / Comic Vine) plus a folder provider for the series directory.
 /// </summary>
 public class MangaBakaPlugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {

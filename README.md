@@ -7,7 +7,7 @@ Metadata providers for manga and light novel libraries.
 | **Suwayomi Metadata** | Fills series-folder metadata and cover art from a [Suwayomi](https://github.com/Suwayomi/Suwayomi-Server) server. Best when Suwayomi is what downloaded the library — matching is exact, by folder path. |
 | **MangaBaka** | Fills series-folder metadata and cover art from [MangaBaka](https://mangabaka.org). Works for any manga or light novel library; matches by title. |
 
-Both target **Jellyfin 12.0.0** (.NET 10).
+Both target **Jellyfin 12**. Plugin versions start at **12.0.0.0** to match that major, and live under the **Books** catalogue category.
 
 ## Installing
 
@@ -20,7 +20,11 @@ https://github.com/lavavex/Jellyfin-Plugins/releases/latest/download/manifest.js
 That URL always resolves to the newest release, so Jellyfin picks up new
 versions without you changing anything.
 
-The plugins then appear under Catalog. Restart Jellyfin after installing.
+The plugins then appear under Catalog → Books. Restart Jellyfin after installing.
+
+Enable them per library: **Dashboard → Libraries → (book library) → Metadata
+downloaders**. They show as **Suwayomi** and **MangaBaka** next to Google Books
+and Comic Vine.
 
 ## Development
 
@@ -33,28 +37,32 @@ is usable publicly.
 Jellyfin models a book/manga **series folder** as a plain `Folder`, and no
 built-in provider populates it — chapters get metadata from the `ComicInfo.xml`
 inside each CBZ, but the series itself stays blank. Both plugins bind
-`ICustomMetadataProvider<Folder>` to fill that gap.
+`IRemoteMetadataProvider<Book, BookInfo>` so they appear in a book library's
+metadata-downloader list (the same interface Google Books and Comic Vine use),
+and still fill the series folder during a refresh.
 
-Note that such a provider is **not** user-selectable in a library's metadata
-downloader list; it runs automatically during a refresh. If a series shows no
-metadata, run *Refresh metadata → Replace all metadata* on it.
+If a series shows no metadata, run *Refresh metadata → Replace all metadata*
+on it, and confirm the provider is enabled on that library.
 
 ## Configuration
 
 **Suwayomi Metadata** — set the server URL. Matching uses the folder path, so
-the library must be the one Suwayomi downloads into.
+the library must be the one Suwayomi downloads into. Leave the URL blank to
+disable.
 
 **MangaBaka** — set the series type (`novel` or `manga`) to suit the library.
 Most series exist as *both* a novel and a manga adaptation, so leaving this on
 "Any" is the most common cause of wrong matches. `MinMatchScore` (default 80)
-controls how close a title must be before a result is accepted.
+controls how close a title must be before a result is accepted. The API host is
+fixed at `https://api.mangabaka.org`. Leave **MangaBaka API** on *Stable (v1)*
+unless you want the beta v2 search and series endpoints.
 
 ## Releasing
 
 Tag and push; GitHub Actions does the rest.
 
 ```bash
-git tag v1.0.1 && git push origin v1.0.1
+git tag v12.0.0 && git push origin v12.0.0
 ```
 
 The workflow builds both plugins, packages them, regenerates `manifest.json`

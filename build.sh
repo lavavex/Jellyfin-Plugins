@@ -22,10 +22,21 @@ OUT="releases"
 mkdir -p "$OUT"
 
 # name|guid|version|category|description
+# Version tracks Jellyfin's major: 12.0.0.0 is the first release for Jellyfin 12.
 PLUGINS=(
-"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|1.0.0.0|Metadata|Series metadata and cover art for manga libraries, read from a Suwayomi server."
-"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|1.0.0.0|Metadata|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
+"Suwayomi Metadata|6f1c9d24-3b7a-4f18-9d55-2e7a1c4b8e90|12.0.0.0|Books|Series metadata and cover art for manga libraries, read from a Suwayomi server."
+"MangaBaka|8c3e5a17-42b9-4d6e-b1f0-9a7c5d2e4b83|12.0.0.0|Books|Series metadata and cover art for manga and light novel libraries, from MangaBaka."
 )
+changelog_for() {
+  case "$1" in
+    "Suwayomi Metadata")
+      echo "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Server URL starts blank."
+      ;;
+    "MangaBaka")
+      echo "12.0.0.0 for Jellyfin 12. Listed under Books and as a selectable book metadata provider. Settings page no longer overlays other dashboard pages. Reads titles, publication dates, and tags per the MangaBaka spec. Optional beta (v2) API."
+      ;;
+  esac
+}
 
 proj_dir() {
   case "$1" in
@@ -61,6 +72,7 @@ for spec in "${PLUGINS[@]}"; do
   IFS='|' read -r NAME GUID VER CAT DESC <<< "$spec"
   DIR=$(proj_dir "$NAME"); ASM=$(asm_name "$NAME"); SLUG=$(slug "$NAME")
   LOGO=$(logo "$NAME")
+  CHANGELOG=$(changelog_for "$NAME")
   if [ ! -f "assets/$LOGO" ]; then
     echo "missing assets/$LOGO -- run assets/make_logos.py" >&2
     exit 1
@@ -73,6 +85,22 @@ for spec in "${PLUGINS[@]}"; do
   rm -f "$ZIP"
   STAGE=$(mktemp -d)
   cp "$DIR/bin/Release/net10.0/$ASM.dll" "$STAGE/"
+  # Sideloaded zips have no catalogue metadata, so ship meta.json in the zip
+  # or Jellyfin files the plugin under Other.
+  cat > "$STAGE/meta.json" <<META
+{
+  "guid": "$GUID",
+  "name": "$NAME",
+  "description": "$DESC",
+  "overview": "$DESC",
+  "owner": "roberth",
+  "category": "$CAT",
+  "version": "$VER",
+  "targetAbi": "12.0.0.0",
+  "changelog": "$CHANGELOG",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+META
   ( cd "$STAGE" && zip -q -r "$OLDPWD/$ZIP" . )
   rm -rf "$STAGE"
 
@@ -96,7 +124,7 @@ for spec in "${PLUGINS[@]}"; do
     \"versions\": [
       {
         \"version\": \"$VER\",
-        \"changelog\": \"Initial release.\",
+        \"changelog\": \"$CHANGELOG\",
         \"targetAbi\": \"12.0.0.0\",
         \"sourceUrl\": \"$BASE/$(basename "$ZIP")\",
         \"checksum\": \"$SUM\",
